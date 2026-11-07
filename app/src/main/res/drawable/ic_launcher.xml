@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 니어바이 로고: 세로 앞길 띠 위의 내 차(모래색)와 앞쪽 주의 칸(빨강) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="36"
+    android:viewportHeight="36">
+    <path android:fillColor="#002C5F" android:pathData="M0,0h36v36h-36z" />
+    <path android:fillColor="#0E3B6F" android:pathData="M5,5h7v7h-7z M24,5h7v7h-7z M5,14.5h7v7h-7z M24,14.5h7v7h-7z M5,24h7v7h-7z M24,24h7v7h-7z" />
+    <path android:fillColor="#E63312" android:pathData="M14.5,5h7v7h-7z" />
+    <path android:fillColor="#00AAD2" android:pathData="M14.5,14.5h7v7h-7z" />
+    <path android:fillColor="#E4DCD3" android:pathData="M14.5,24h7v7h-7z" />
+</vector>
