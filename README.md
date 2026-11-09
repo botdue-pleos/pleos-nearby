@@ -13,7 +13,7 @@
 
 <img src="docs/mockups/hero.jpg" width="100%" alt="터널 2km 뒤 차의 중앙 디스플레이에 앞길 램프와 터널 안 위험 운전 제보가 떠 있는 모습">
 
-[움직이는 장면](#움직이는-장면) · [**시연 영상 (69초)**](docs/demo.mp4) · [APK 받기](apk/봇듀_니어바이_release.apk) · [개발일지](docs/개발일지.md) · [시스템 구조](#시스템-구조) · [시연 방법](#실행)
+[움직이는 장면](#움직이는-장면) · [**시연 영상 (70초)**](docs/demo.mp4) · [APK 받기](apk/봇듀_니어바이_release.apk) · [개발일지](docs/개발일지.md) · [시스템 구조](#시스템-구조) · [시연 방법](#실행)
 
 </div>
 
@@ -191,7 +191,7 @@ adb shell am start -n com.botdue.nearby/.MainActivity --ei scenario 1 --es car D
 | --- | --- |
 | 판정 엔진(core) | 완료, 테스트 25개 (규칙별 + 시나리오 처음부터 끝까지) |
 | 중계 서버 | 완료, WebSocket 두 연결 간 배달 테스트 1개. 에뮬레이터 앱 ↔ PC 서버 ↔ 다른 차(스크립트) 합류 예고 오가는 것 확인 |
-| 시연 영상 | 완료(v7). 69초, 도로를 위에서 내려다본 장면 위에 차 4대의 화면을 나란히 (`docs/demo.mp4`) |
+| 시연 영상 | 완료(v8). 70초, 차 4대 시나리오를 차마다 시점을 바꿔 v0.2.0 화면으로 녹화 (`docs/demo.mp4`) |
 | 디자인 | 완료(v0.2.0). 현대차 "Pixel by Pixel" 캠페인에서 출발한 앞길 램프, 밝은 도로 바탕과 표지판처럼 읽히는 알림으로 다른 두 앱과 화면 문법을 나눔 ([디자인](#디자인)) |
 | 차량 앱 화면 | 완료 (주행·행동요령·신고 도우미·지도). 휴대폰 에뮬레이터를 Pleos 창 크기로 맞춰 확인, Pleos 이미지에서는 아직 |
 | Pleos SDK 연결 | 예정. `VehicleSample`을 Vehicle SDK(Brake·TurnSignal·Light·Door), CarPropertyManager(속도·기어), NaviHelper(경로·합류 지점·터널) 콜백으로 채운다 |
