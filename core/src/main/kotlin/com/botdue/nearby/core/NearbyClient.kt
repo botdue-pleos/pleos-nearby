@@ -247,7 +247,7 @@ class NearbyClient(
     )
 
     fun reportGuide(): List<String> = buildList {
-        memos.forEach { m -> add("${clock(m.at)} · ${m.place}") }
+        memos.forEach { m -> add("${clock(m.at)}, ${m.place}") }
         add("블랙박스에서 이 시각 전후 영상을 따로 저장하세요.")
         add("과태료 처분을 원하면 안전신문고 앱에, 형사 처벌을 원하면 영상을 가지고 경찰서에 신고하세요.")
         add("판단은 경찰이 해요. 니어바이는 시각과 위치만 이 차 안에 적어 두었어요.")

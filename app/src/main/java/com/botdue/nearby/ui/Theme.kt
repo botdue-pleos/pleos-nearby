@@ -53,25 +53,33 @@ data class Palette(
     val danger: Color,
     val dangerFg: Color,
     val warm: Color,
+    /** 앞길 램프 기둥 바탕 */
+    val panel: Color,
+)
+
+/*
+ * 주간: 밝은 도로 톤. 도로 표지판처럼 흰 바탕 위 진한 글자, 내 차는 Hyundai Blue, 위험은 붉은 픽셀.
+ * 야간: 같은 구조를 아스팔트 회색으로 (밤에 밝은 화면이 눈부시지 않게).
+ */
+val DayPalette = Palette(
+    bg = Color(0xFFEEF0F2), fg = Color(0xFF1C2430), sub = Color(0xFF5B6672), line = Color(0xFFCDD3D9),
+    cell = Color(0xFFCBD0D6), tunnel = Color(0xFFB5BBC3), me = Color(0xFF002C5F),
+    primaryBg = Color(0xFF002C5F), primaryFg = Color(0xFFFFFFFF), outline = Color(0xFF9AA3AD),
+    cardBg = Color(0xFFFFFFFF), cardFg = Color(0xFF1C2430), accent = Color(0xFF00789C),
+    danger = Color(0xFFC42A0E), dangerFg = Color(0xFFFFFFFF), warm = Color(0xFF002C5F),
+    panel = Color(0xFFE2E5E9),
 )
 
 val NightPalette = Palette(
-    bg = Color(0xFF002C5F), fg = Color(0xFFF6F3F2), sub = Color(0xFFAACAE6), line = Color(0xFF2A5A8F),
-    cell = Color(0xFF0E3B6F), tunnel = Color(0xFF062349), me = Color(0xFFE4DCD3),
-    primaryBg = Color(0xFF00AAD2), primaryFg = Color(0xFF002C5F), outline = Color(0xFF3F6799),
-    cardBg = Color(0xFF0B3A70), cardFg = Color(0xFFF6F3F2), accent = Color(0xFF00AAD2),
-    danger = Color(0xFFE63312), dangerFg = Color(0xFFFFFFFF), warm = Color(0xFFE4DCD3),
+    bg = Color(0xFF15181C), fg = Color(0xFFE8E4DA), sub = Color(0xFF8C939C), line = Color(0xFF2A3037),
+    cell = Color(0xFF2A3037), tunnel = Color(0xFF1C2025), me = Color(0xFFE8E4DA),
+    primaryBg = Color(0xFFE8E4DA), primaryFg = Color(0xFF15181C), outline = Color(0xFF4A5058),
+    cardBg = Color(0xFF1F2328), cardFg = Color(0xFFE8E4DA), accent = Color(0xFF3FC2E0),
+    danger = Color(0xFFF0553A), dangerFg = Color(0xFFFFFFFF), warm = Color(0xFFE8E4DA),
+    panel = Color(0xFF1B1E22),
 )
 
-val DayPalette = Palette(
-    bg = Color(0xFFF6F3F2), fg = Color(0xFF002C5F), sub = Color(0xFF4A5A70), line = Color(0xFFD5CCC2),
-    cell = Color(0xFFE4DCD3), tunnel = Color(0xFFC9BFB3), me = Color(0xFF002C5F),
-    primaryBg = Color(0xFF002C5F), primaryFg = Color(0xFFF6F3F2), outline = Color(0xFFB9AFA4),
-    cardBg = Color(0xFFFFFFFF), cardFg = Color(0xFF002C5F), accent = Color(0xFF007FA8),
-    danger = Color(0xFFC72A0E), dangerFg = Color(0xFFFFFFFF), warm = Color(0xFFA36B4F),
-)
-
-val LocalPalette = staticCompositionLocalOf { NightPalette }
+val LocalPalette = staticCompositionLocalOf { DayPalette }
 
 val pal: Palette
     @Composable get() = LocalPalette.current

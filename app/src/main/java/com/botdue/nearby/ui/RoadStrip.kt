@@ -74,7 +74,7 @@ fun RoadStrip(me: RoadPos, notices: Collection<Notice>, tunnel: IntRange?, modif
             .fillMaxHeight()
             .semantics { contentDescription = "앞길 램프: 앞 3킬로미터, 뒤 1킬로미터" },
     ) {
-        Canvas(Modifier.width(118.px).fillMaxHeight()) {
+        Canvas(Modifier.width(104.px).fillMaxHeight()) {
             val rowH = size.height / rows.size
             val gap = rowH * 0.18f
             val cell = minOf(rowH - gap, (size.width - gap * (PIXELS_PER_ROW - 1)) / PIXELS_PER_ROW)
@@ -118,13 +118,13 @@ fun RoadStrip(me: RoadPos, notices: Collection<Notice>, tunnel: IntRange?, modif
                     k == 5 -> "1km"
                     k == 10 -> "2km"
                     k == AHEAD_CELLS - 1 -> "3km"
-                    k == -BEHIND_CELLS -> "뒤 1km"
+                    k == -BEHIND_CELLS -> "뒤1km"
                     inTunnel && cellStart == tunnel!!.first -> "터널"
                     else -> null
                 }
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
                     if (label != null) {
-                        T(label, 20.tx, color = if (kind != null || k == 0) p.fg else p.sub, weight = if (kind != null) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal)
+                        T(label, 19.tx, color = if (kind != null || k == 0) p.fg else p.sub, weight = if (kind != null) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal)
                     }
                 }
             }

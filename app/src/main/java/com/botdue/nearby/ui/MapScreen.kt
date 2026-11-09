@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -36,9 +37,14 @@ fun MapScreen(hotspots: Map<HazardBoard.StatKey, Int>, tunnel: IntRange?, onBack
             .background(pal.bg)
             .padding(horizontal = 48.px, vertical = 40.px)
     ) {
-        Header("위험 지점 지도", "본선 상행 · 평일 · 시")
+        Row(Modifier.fillMaxWidth()) {
+            T("위험 지점 지도", 24.tx, Modifier.weight(1f), color = pal.sub)
+            T("본선 상행, 평일", 24.tx, color = pal.sub)
+        }
+        Spacer(Modifier.height(30.px))
+        T("평일 저녁, 터널 입구 앞뒤에 제보가 몰려요", 44.tx, weight = androidx.compose.ui.text.font.FontWeight.ExtraBold, lineHeight = 1.3f)
         Spacer(Modifier.height(16.px))
-        T("5건 이상 쌓인 칸만 보여요. 차량·제보자 정보 없이 칸별 건수만 남아요. (시연 데이터)", 22.tx, color = pal.sub)
+        T("같은 칸에 5건 이상 쌓인 곳만 켜요. 누가 언제 제보했는지는 남기지 않아요. 시연 데이터예요.", 24.tx, color = pal.sub, lineHeight = 1.5f)
         Spacer(Modifier.height(24.px))
         Row(Modifier.weight(1f)) {
             Column(Modifier.width(140.px).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(4.px)) {

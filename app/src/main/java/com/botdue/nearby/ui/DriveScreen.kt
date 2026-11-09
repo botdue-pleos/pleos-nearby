@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.botdue.nearby.core.NearbyClient
 import com.botdue.nearby.core.Notice
+import com.botdue.nearby.core.RoadPos
 import com.botdue.nearby.core.SafetyChecklist
 
 private val DANGER_ORDER = listOf(Notice.Kind.STOPPED_AHEAD, Notice.Kind.HAZARD_AHEAD, Notice.Kind.HAZARD_BEHIND)
@@ -31,8 +34,8 @@ private fun ordered(list: Collection<Notice>) =
 private fun Notice.Kind.danger() = this == Notice.Kind.STOPPED_AHEAD || this == Notice.Kind.HAZARD_AHEAD || this == Notice.Kind.HAZARD_BEHIND
 
 /**
- * 주행 화면 (세로 1칸). 왼쪽은 앞길 띠, 오른쪽은 지금 가장 급한 알림 하나와 나머지 목록.
- * 내 차가 멈춰 서면 오른쪽이 행동요령 확인판으로, 차를 세우면 신고 도우미로 바뀐다.
+ * 주행 화면 (세로 1칸). 도로 표지판처럼 읽힌다: 왼쪽은 앞길 램프, 오른쪽은 가장 급한 알림 하나를
+ * "거리 → 무엇 → 근거 표" 순서로. 내 차가 멈추면 오른쪽이 행동요령으로, 차를 세우면 신고 도우미로 바뀐다.
  */
 @Composable
 fun DriveScreen(
@@ -45,165 +48,196 @@ fun DriveScreen(
     val s = client.last
     // version이 바뀔 때마다 알림 목록을 다시 읽는다 (NearbyClient는 Compose 상태가 아니다)
     val notices = remember(version) { ordered(client.notices.values) }
-    Column(
-        modifier
-            .fillMaxSize()
-            .background(pal.bg)
-            .padding(horizontal = 48.px, vertical = 40.px)
-    ) {
-        Header("니어바이", clock)
-        Spacer(Modifier.height(10.px))
-        T(
+    Row(modifier.fillMaxSize().background(pal.bg)) {
+        Box(
+            Modifier
+                .width(240.px)
+                .fillMaxHeight()
+                .background(pal.panel)
+                .padding(start = 36.px, top = 40.px, bottom = 40.px)
+        ) {
+            if (s != null) RoadStrip(s.pos, notices, tunnel)
+        }
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .padding(horizontal = 44.px, vertical = 40.px)
+        ) {
+            Row(Modifier.fillMaxWidth()) {
+                T(
+                    when {
+                        s == null -> "출발 전"
+                        s.parked -> "주차 중"
+                        s.inTunnel -> "${s.pos.roadId} 터널 안"
+                        else -> "${s.pos.roadId} 상행"
+                    },
+                    24.tx, Modifier.weight(1f), color = pal.sub,
+                )
+                T(if (s == null || s.parked) clock else "시속 ${s.speedKmh}km", 24.tx, color = pal.sub)
+            }
+            Spacer(Modifier.height(56.px))
+            val list = client.checklist
             when {
-                s == null -> "출발 전"
-                s.parked -> "주차 중"
-                else -> "${s.pos.roadId} · 시속 ${s.speedKmh}km${if (s.inTunnel) " · 터널 안" else ""}"
-            },
-            24.tx, color = pal.sub,
-        )
-        Spacer(Modifier.height(28.px))
-        Row(Modifier.weight(1f)) {
-            if (s != null) RoadStrip(s.pos, notices, tunnel, Modifier.width(250.px))
-            Spacer(Modifier.width(32.px))
-            Column(Modifier.weight(1f)) {
-                val list = client.checklist
-                when {
-                    list != null -> ChecklistPanel(list, list.completed.toSet(), list.current)
-                    client.showReportGuide -> ReportPanel(client.reportGuide())
-                    notices.isEmpty() -> Quiet()
-                    else -> {
-                        BigNotice(notices.first())
-                        Spacer(Modifier.height(20.px))
-                        notices.drop(1).take(3).forEach { SmallNotice(it); Spacer(Modifier.height(12.px)) }
-                    }
+                list != null -> ChecklistPanel(list, list.completed.toSet(), list.current)
+                client.showReportGuide -> ReportPanel(client.reportGuide())
+                notices.isEmpty() -> Quiet()
+                else -> {
+                    BigNotice(notices.first(), s?.pos)
+                    notices.drop(1).take(2).forEach { SmallNotice(it) }
                 }
             }
+            Spacer(Modifier.weight(1f))
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(pal.cardBg, RoundedCornerShape(8.px))
+                    .padding(horizontal = 30.px, vertical = 26.px)
+            ) {
+                T(client.spoken.lastOrNull() ?: "알릴 일이 생기면 한 번만, 짧게 말해요.", 28.tx, color = pal.cardFg, lineHeight = 1.5f)
+            }
         }
-        Spacer(Modifier.height(20.px))
-        Divider()
-        Spacer(Modifier.height(14.px))
-        T("말한 내용", 20.tx, color = pal.sub)
-        T(client.spoken.lastOrNull() ?: "알릴 일이 생기면 한 번만, 짧게 말해요.", 24.tx, lineHeight = 1.35f)
     }
 }
 
 @Composable
 private fun Quiet() {
-    Column {
-        T("앞길 조용해요", 44.tx, weight = FontWeight.Bold)
-        Spacer(Modifier.height(14.px))
-        T("근처 플레오스 차와 익명으로 연결돼 있어요. 차량 번호·차종·색상은 주고받지 않아요.", 26.tx, color = pal.sub)
-    }
+    T("앞길 조용해요", 56.tx, weight = FontWeight.ExtraBold, lineHeight = 1.2f)
+    Spacer(Modifier.height(20.px))
+    T("근처 플레오스 차와 익명으로 이어져 있어요. 차량 번호와 차종, 색상은 주고받지 않아요.", 28.tx, color = pal.sub, lineHeight = 1.55f)
 }
 
-/**
- * 지금 가장 급한 알림. 색으로 크게 칠하지 않고, 램프와 같은 픽셀 세 칸으로만 종류를 보여 준다
- * (강조는 왼쪽 램프 한 곳에 모은다).
- */
+/** 거리 표기: 1km 넘으면 소수 한 자리 km, 아니면 100m 단위 */
+private fun distanceParts(m: Int): Pair<String, String> =
+    if (m >= 1000) "%.1f".format(m / 1000.0) to "km 앞" else "${(m / 100 * 100).coerceAtLeast(100)}" to "m 앞"
+
+private fun Notice.count(): Int? = Regex("([0-9]+)대").find(title)?.groupValues?.get(1)?.toIntOrNull()
+
+/** 큰 글씨 한 줄: 무슨 일인지 */
+private fun Notice.what(): String = when (kind) {
+    Notice.Kind.HAZARD_AHEAD -> (if (inTunnel) "터널 안 " else "") + "위험 운전 제보"
+    Notice.Kind.STOPPED_AHEAD -> (if (inTunnel) "터널 안 " else "") + "멈춘 차"
+    Notice.Kind.MERGE -> "진입로에서 ${count() ?: 1}대 합류 예정"
+    else -> title
+}
+
+/** 근거 표: 판정 규칙을 운전자가 읽는 말로 */
+private fun Notice.facts(): List<Pair<String, String>> = when (kind) {
+    Notice.Kind.HAZARD_AHEAD -> listOf(
+        "근거" to "서로 다른 차 2대의 신호, 30초 안",
+        "범위" to if (inTunnel) "터널이라 뒤 3km까지" else "뒤 2km까지",
+        "다시 알림" to if (inTunnel) "터널 1km 앞에서" else "없음",
+        "사라짐" to "5분 뒤",
+    )
+    Notice.Kind.STOPPED_AHEAD -> listOf(
+        "근거" to "급제동 뒤 멈춰 선 차",
+        "범위" to if (inTunnel) "터널이라 뒤 3km까지" else "뒤 2km까지",
+        "사라짐" to "그 차가 다시 출발하면",
+    )
+    Notice.Kind.HAZARD_BEHIND -> listOf(
+        "근거" to "서로 다른 차 2대의 신호, 30초 안",
+        "범위" to "앞 1km까지",
+        "사라짐" to "5분 뒤",
+    )
+    Notice.Kind.MERGE -> listOf(
+        "근거" to "진입로 차의 내비 경로",
+        "언제" to "60초 안 합류",
+        "판단" to "참고만 하세요",
+    )
+    else -> emptyList()
+}
+
 @Composable
-private fun BigNotice(n: Notice) {
-    val lit = when {
+private fun ColumnScope.BigNotice(n: Notice, me: RoadPos?) {
+    val d = if (me != null && n.at != null) me.distanceTo(n.at!!) else null
+    val showDistance = d != null && d > 0 && n.kind in setOf(Notice.Kind.HAZARD_AHEAD, Notice.Kind.STOPPED_AHEAD, Notice.Kind.MERGE)
+    val tone = when {
         n.kind.danger() -> pal.danger
         n.kind == Notice.Kind.MERGE || n.kind == Notice.Kind.FLOW -> pal.accent
-        else -> pal.me
+        else -> pal.fg
     }
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(pal.cardBg, RoundedCornerShape(10.px))
-            .padding(32.px)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            repeat(3) {
-                Box(Modifier.padding(end = 6.px).size(22.px).background(lit, RoundedCornerShape(3.px)))
-            }
-            T(kindLabel(n.kind), 22.tx, Modifier.padding(start = 10.px), weight = FontWeight.SemiBold, color = pal.sub)
+    if (showDistance) {
+        val (num, unit) = distanceParts(d!!)
+        Row(verticalAlignment = Alignment.Bottom) {
+            T(num, 104.tx, weight = FontWeight.ExtraBold, lineHeight = 1f)
+            T(unit, 40.tx, Modifier.padding(start = 10.px, bottom = 10.px), weight = FontWeight.Bold)
         }
-        Spacer(Modifier.height(18.px))
-        T(n.title, 46.tx, weight = FontWeight.ExtraBold, color = pal.cardFg, lineHeight = 1.2f)
-        Spacer(Modifier.height(14.px))
-        T(n.detail, 26.tx, color = pal.cardFg)
+        Spacer(Modifier.height(16.px))
+        T(n.what(), 42.tx, weight = FontWeight.ExtraBold, color = tone, lineHeight = 1.3f)
+    } else {
+        T(n.what(), 52.tx, weight = FontWeight.ExtraBold, color = if (n.kind.danger()) tone else pal.fg, lineHeight = 1.25f)
+        Spacer(Modifier.height(16.px))
+        T(n.detail, 28.tx, color = pal.sub, lineHeight = 1.5f)
     }
+    val facts = n.facts()
+    if (facts.isNotEmpty()) {
+        Spacer(Modifier.height(40.px))
+        facts.forEachIndexed { i, (k, v) ->
+            Divider()
+            Row(Modifier.fillMaxWidth().padding(vertical = 22.px)) {
+                T(k, 26.tx, Modifier.width(150.px), color = pal.sub)
+                T(v, 26.tx, Modifier.weight(1f))
+            }
+            if (i == facts.lastIndex) Divider()
+        }
+    }
+    Spacer(Modifier.height(24.px))
 }
 
 @Composable
 private fun SmallNotice(n: Notice) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.padding(top = 14.px), verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier
                 .size(18.px)
-                .background(if (n.kind.danger()) pal.danger else if (n.kind == Notice.Kind.MERGE) pal.accent else pal.me, RoundedCornerShape(3.px))
+                .background(if (n.kind.danger()) pal.danger else if (n.kind == Notice.Kind.MERGE) pal.accent else pal.me, RoundedCornerShape(2.px))
         )
-        T(n.title, 24.tx, Modifier.padding(start = 14.px))
+        T(n.title, 24.tx, Modifier.padding(start = 14.px), color = pal.sub)
     }
-}
-
-private fun kindLabel(k: Notice.Kind) = when (k) {
-    Notice.Kind.STOPPED_AHEAD -> "전방 정차"
-    Notice.Kind.HAZARD_AHEAD -> "앞길 주의보"
-    Notice.Kind.HAZARD_BEHIND -> "후방 주의"
-    Notice.Kind.MERGE -> "합류 예고"
-    Notice.Kind.FLOW -> "합류 준비"
-    Notice.Kind.PROBLEM -> "근처 차가 알려 줌"
-    Notice.Kind.THANKS -> "감사 인사"
-    Notice.Kind.INFO -> "알림"
 }
 
 /** 2차 사고 행동요령: 차량 신호로 확인한 단계에 체크 */
 @Composable
 private fun ChecklistPanel(list: SafetyChecklist, completed: Set<SafetyChecklist.Step>, current: SafetyChecklist.Step?) {
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            repeat(3) { Box(Modifier.padding(end = 6.px).size(22.px).background(pal.danger, RoundedCornerShape(3.px))) }
-            T(if (list.inTunnel) "터널 안 정차" else "사고·고장 정차", 22.tx, Modifier.padding(start = 10.px), weight = FontWeight.SemiBold, color = pal.sub)
-        }
-        Spacer(Modifier.height(8.px))
-        T("뒤차에 알렸어요", 40.tx, weight = FontWeight.ExtraBold)
-        Spacer(Modifier.height(8.px))
-        T("할 일을 차가 신호로 확인해요", 24.tx, color = pal.sub)
-        Spacer(Modifier.height(24.px))
-        SafetyChecklist.Step.entries.forEach { step ->
-            val done = step in completed
-            val now = current == step
-            Row(
+    T("뒤차에 알렸어요", 52.tx, weight = FontWeight.ExtraBold, lineHeight = 1.2f)
+    Spacer(Modifier.height(14.px))
+    T(if (list.inTunnel) "터널 안에 멈춰 섰어요. 할 일을 차가 신호로 확인해요." else "멈춰 섰어요. 할 일을 차가 신호로 확인해요.", 28.tx, color = pal.sub, lineHeight = 1.5f)
+    Spacer(Modifier.height(36.px))
+    SafetyChecklist.Step.entries.forEachIndexed { i, step ->
+        val done = step in completed
+        val now = current == step
+        Divider()
+        Row(Modifier.fillMaxWidth().padding(vertical = 22.px), verticalAlignment = Alignment.CenterVertically) {
+            Box(
                 Modifier
-                    .fillMaxWidth()
-                    .background(if (now) pal.cardBg else androidx.compose.ui.graphics.Color.Transparent, RoundedCornerShape(14.px))
-                    .padding(horizontal = 20.px, vertical = 18.px),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    Modifier
-                        .size(34.px)
-                        .background(if (done) pal.accent else pal.cell, RoundedCornerShape(8.px)),
-                    contentAlignment = Alignment.Center,
-                ) { if (done) T("✓", 20.tx, weight = FontWeight.Bold, color = pal.primaryFg) }
-                Column(Modifier.padding(start = 18.px)) {
-                    T(list.title(step), 30.tx, weight = if (now) FontWeight.Bold else FontWeight.Normal, color = if (done) pal.sub else pal.fg)
-                    T(
-                        when (step) {
-                            SafetyChecklist.Step.HAZARD -> "비상등 신호"
-                            SafetyChecklist.Step.TRUNK -> "트렁크 열림 신호"
-                            SafetyChecklist.Step.EVACUATE -> "운전석 문 열림 신호"
-                            SafetyChecklist.Step.REPORT -> "\"신고했어\" 음성"
-                        } + if (done) " 확인" else "로 확인",
-                        20.tx, color = pal.sub,
-                    )
-                }
+                    .size(30.px)
+                    .background(if (done) pal.me else pal.cell, RoundedCornerShape(3.px))
+            )
+            Column(Modifier.padding(start = 22.px).weight(1f)) {
+                T(list.title(step), 30.tx, weight = if (now) FontWeight.ExtraBold else FontWeight.Normal, color = if (done) pal.sub else pal.fg)
+                T(
+                    when (step) {
+                        SafetyChecklist.Step.HAZARD -> "비상등 신호"
+                        SafetyChecklist.Step.TRUNK -> "트렁크 열림 신호"
+                        SafetyChecklist.Step.EVACUATE -> "운전석 문 열림 신호"
+                        SafetyChecklist.Step.REPORT -> "\"신고했어\"라는 말"
+                    } + if (done) "로 확인했어요" else "로 확인해요",
+                    22.tx, color = pal.sub,
+                )
             }
-            Spacer(Modifier.height(8.px))
+            if (now) T("지금", 24.tx, weight = FontWeight.Bold, color = pal.danger)
         }
+        if (i == SafetyChecklist.Step.entries.lastIndex) Divider()
     }
 }
 
 @Composable
 private fun ReportPanel(lines: List<String>) {
-    Column(verticalArrangement = Arrangement.spacedBy(14.px)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            repeat(3) { Box(Modifier.padding(end = 6.px).size(22.px).background(pal.me, RoundedCornerShape(3.px))) }
-            T("신고 도우미", 22.tx, Modifier.padding(start = 10.px), weight = FontWeight.SemiBold, color = pal.sub)
+    T("기록해 둔 순간", 52.tx, weight = FontWeight.ExtraBold, lineHeight = 1.2f)
+    Spacer(Modifier.height(30.px))
+    Column(verticalArrangement = Arrangement.spacedBy(18.px)) {
+        lines.forEachIndexed { i, line ->
+            T(line, if (i == 0) 32.tx else 26.tx, weight = if (i == 0) FontWeight.Bold else FontWeight.Normal, color = if (i == 0) pal.fg else pal.sub, lineHeight = 1.5f)
         }
-        T("기록해 둔 순간", 40.tx, weight = FontWeight.ExtraBold)
-        lines.forEach { T(it, 26.tx) }
     }
 }
