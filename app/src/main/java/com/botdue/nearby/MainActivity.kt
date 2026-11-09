@@ -61,6 +61,7 @@ class MainActivity : ComponentActivity() {
             jump = intent.getBooleanExtra("jump", false),
             map = intent.getBooleanExtra("map", false),
             clean = intent.getBooleanExtra("clean", false),
+            play = intent.getBooleanExtra("play", false),
         )
         setContent { NearbyApp(start) }
     }
@@ -74,6 +75,8 @@ data class StartAt(
     val map: Boolean = false,
     /** 시연 조작판을 숨긴다 (차 안 목업용 화면 캡처) */
     val clean: Boolean = false,
+    /** 열자마자 재생 (조작판 없이 영상 녹화) */
+    val play: Boolean = false,
 )
 
 /** 시연 한 판: 재생기 + (여러 대 시연이면) 서버 연결 */
@@ -102,7 +105,7 @@ fun NearbyApp(start: StartAt = StartAt()) {
     var scenarioIndex by remember { mutableIntStateOf(start.scenario) }
     var car by remember { mutableStateOf(start.car) }
     var remote by remember { mutableStateOf(false) }
-    var playing by remember { mutableStateOf(false) }
+    var playing by remember { mutableStateOf(start.play) }
     var showMap by remember { mutableStateOf(start.map) }
     var version by remember { mutableIntStateOf(0) }
     var session by remember {
