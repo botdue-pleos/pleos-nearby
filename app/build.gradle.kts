@@ -12,8 +12,8 @@ android {
         applicationId = "com.botdue.nearby"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         // 에뮬레이터에서 내 PC의 중계 서버 주소 (10.0.2.2 = 호스트 PC)
         buildConfigField("String", "HUB_URL", "\"ws://10.0.2.2:8080/nearby\"")
     }
