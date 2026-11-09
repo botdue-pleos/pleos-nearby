@@ -60,12 +60,21 @@ class MainActivity : ComponentActivity() {
             seekSec = intent.getIntExtra("seek", 0),
             jump = intent.getBooleanExtra("jump", false),
             map = intent.getBooleanExtra("map", false),
+            clean = intent.getBooleanExtra("clean", false),
         )
         setContent { NearbyApp(start) }
     }
 }
 
-data class StartAt(val scenario: Int = 0, val car: CarId = CarId.B, val seekSec: Int = 0, val jump: Boolean = false, val map: Boolean = false)
+data class StartAt(
+    val scenario: Int = 0,
+    val car: CarId = CarId.B,
+    val seekSec: Int = 0,
+    val jump: Boolean = false,
+    val map: Boolean = false,
+    /** 시연 조작판을 숨긴다 (차 안 목업용 화면 캡처) */
+    val clean: Boolean = false,
+)
 
 /** 시연 한 판: 재생기 + (여러 대 시연이면) 서버 연결 */
 private class Session(val player: ScenarioPlayer, val remote: RemoteHubLink?, val board: HazardBoard)
@@ -136,7 +145,7 @@ fun NearbyApp(start: StartAt = StartAt()) {
                 // 재생기 상태는 Compose 상태가 아니라서, 바뀐 횟수(version)를 함께 넘겨 다시 그리게 한다
                 DriveScreen(client, version, player.scenario.tunnel, clock, Modifier.weight(1f))
             }
-            DemoBar(
+            if (!start.clean) DemoBar(
                 scenarioIndex = scenarioIndex,
                 onScenario = { scenarioIndex = it; restart() },
                 car = shownCar,

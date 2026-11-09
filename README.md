@@ -11,9 +11,9 @@
 ![Tests](https://img.shields.io/badge/테스트-26개_통과-00AAD2?style=flat-square)
 ![Version](https://img.shields.io/badge/version-0.1.0-A36B4F?style=flat-square)
 
-<img src="docs/screens/4_hazard.png" width="32%" alt="터널 안 위험 운전 제보를 터널 2km 뒤 차에 알리는 화면"> <img src="docs/screens/1_merge.png" width="32%" alt="본선 차에 진입로 합류 예정을 알리는 화면"> <img src="docs/screens/5_checklist.png" width="32%" alt="멈춘 차의 2차 사고 행동요령을 차량 신호로 확인하는 화면">
+<img src="docs/mockups/hero.jpg" width="100%" alt="터널 2km 뒤 차의 중앙 디스플레이에 앞길 램프와 터널 안 위험 운전 제보가 떠 있는 모습">
 
-[APK 받기](apk/봇듀_니어바이_release.apk) · [개발일지](docs/개발일지.md) · [시스템 구조](#시스템-구조) · [시연 방법](#실행)
+[**움직이는 장면**](#움직이는-장면) · [APK 받기](apk/봇듀_니어바이_release.apk) · [개발일지](docs/개발일지.md) · [시스템 구조](#시스템-구조) · [시연 방법](#실행)
 
 </div>
 
@@ -91,6 +91,21 @@
 
 <sub>Pleos Connect 앱 창 크기(세로 1칸 920×1330)로 맞춘 에뮬레이터에서 찍은 실제 실행 화면. 아래쪽 시연 조작판은 잘랐다(<a href="docs/screens/0_demo.png">조작판 포함 화면</a>).</sub>
 
+### 움직이는 장면
+
+<table>
+<tr>
+<td width="45%"><img src="docs/demo-preview.gif" width="100%" alt="터널 2km 뒤 차 D의 화면: 주의보가 생기자 내 줄에서 위험 지점까지 빨간 픽셀이 차례로 켜지고, 이어서 멈춘 차 알림으로 바뀐다"></td>
+<td>
+<b>시연 2 · 터널 2km 뒤 차 D (22초)</b><br><br>
+1. 터널 안에서 앞차 둘이 거의 동시에 급제동하면 주의보가 생긴다.<br>
+2. 내 줄에서 위험 지점까지 픽셀이 한 번 차례로 켜졌다 꺼진다. 거리를 눈으로 보여 주는, 이 앱의 유일한 움직임이다.<br>
+3. 그중 한 대가 멈춰 서면 더 급한 "멈춘 차" 알림 하나로 바뀐다.<br><br>
+<sub>에뮬레이터 실제 화면을 녹화했다. 시연 조작판은 잘랐다.</sub>
+</td>
+</tr>
+</table>
+
 ## 디자인
 
 현대차 아이오닉 램프 캠페인 "Pixel by Pixel"(2023)의 한 문장에서 출발했다: *픽셀 하나는 깜빡일 뿐이지만, 모이면 더 큰 것이 된다.* 니어바이에서 픽셀 하나는 차 한 대이고, 모이면 길이 된다.
@@ -155,6 +170,8 @@ NEARBY_DEMO=1 ./gradlew :server:run          # ws://localhost:8080/nearby
 
 ```bash
 adb shell am start -n com.botdue.nearby/.MainActivity --ei scenario 1 --es car D --ei seek 12
+# --ez clean true  시연 조작판 숨기기 (차 안 목업용)
+# --ez map true --ez jump true  위험 지점 지도, 5분 뒤 상태
 ```
 
 ### 빌드와 테스트
@@ -170,6 +187,7 @@ adb shell am start -n com.botdue.nearby/.MainActivity --ei scenario 1 --es car D
 | --- | --- |
 | 판정 엔진(core) | 완료, 테스트 25개 (규칙별 + 시나리오 처음부터 끝까지) |
 | 중계 서버 | 완료, WebSocket 두 연결 간 배달 테스트 1개. 에뮬레이터 앱 ↔ PC 서버 ↔ 다른 차(스크립트) 합류 예고 오가는 것 확인 |
+| 디자인 | 완료. 현대차 "Pixel by Pixel" 캠페인에서 출발한 앞길 램프와 점등 움직임 ([디자인](#디자인)) |
 | 차량 앱 화면 | 완료 (주행·행동요령·신고 도우미·지도). 휴대폰 에뮬레이터를 Pleos 창 크기로 맞춰 확인, Pleos 이미지에서는 아직 |
 | Pleos SDK 연결 | 예정. `VehicleSample`을 Vehicle SDK(Brake·TurnSignal·Light·Door), CarPropertyManager(속도·기어), NaviHelper(경로·합류 지점·터널) 콜백으로 채운다 |
 | 음성 | 예정. 지금은 낱말 규칙(`KeywordIntentReader`), Gleo AI STT·LLM으로 바꾼다 |
