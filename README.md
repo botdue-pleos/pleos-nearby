@@ -9,11 +9,11 @@
 ![Pleos Connect](https://img.shields.io/badge/Pleos_Connect-AAOS-002C5F?style=flat-square)
 ![Kotlin](https://img.shields.io/badge/Kotlin-Compose_·_Ktor-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
 ![Tests](https://img.shields.io/badge/테스트-26개_통과-00AAD2?style=flat-square)
-![Version](https://img.shields.io/badge/version-0.1.0-A36B4F?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.2.0-A36B4F?style=flat-square)
 
 <img src="docs/mockups/hero.jpg" width="100%" alt="터널 2km 뒤 차의 중앙 디스플레이에 앞길 램프와 터널 안 위험 운전 제보가 떠 있는 모습">
 
-[움직이는 장면](#움직이는-장면) · [**시연 영상 (70초)**](docs/demo.mp4) · [APK 받기](apk/봇듀_니어바이_release.apk) · [개발일지](docs/개발일지.md) · [시스템 구조](#시스템-구조) · [시연 방법](#실행)
+[움직이는 장면](#움직이는-장면) · [**시연 영상 (69초)**](docs/demo.mp4) · [APK 받기](apk/봇듀_니어바이_release.apk) · [개발일지](docs/개발일지.md) · [시스템 구조](#시스템-구조) · [시연 방법](#실행)
 
 </div>
 
@@ -63,7 +63,7 @@
 <td width="33%"><img src="docs/screens/3_problem.png" alt="문제 알림"></td>
 </tr>
 <tr>
-<td><b>합류 예고</b> (본선 차 B)<br>왼쪽 앞길 띠에 합류 지점이 파란 칸으로 뜬다</td>
+<td><b>합류 예고</b> (본선 차 B)<br>왼쪽 앞길 램프에 합류 지점이 파란 칸으로, 오른쪽엔 남은 거리가 크게</td>
 <td><b>감사 인사</b> (차 B)<br>합류한 A가 비상등을 짧게 켜자 "앞차가 고맙대요"</td>
 <td><b>문제 알림</b> (차 A)<br>뒤차 B가 "앞차 트렁크 열렸어"라고 말해 줌</td>
 </tr>
@@ -73,7 +73,7 @@
 <td><img src="docs/screens/6_tunnel.png" alt="터널 앞 재안내"></td>
 </tr>
 <tr>
-<td><b>앞길 주의보</b> (터널 2km 뒤 차 D)<br>B·C가 거의 동시에 급제동 → 2점 → 터널 안 주의보</td>
+<td><b>앞길 주의보</b> (터널 2km 뒤 차 D)<br>B·C가 거의 동시에 급제동 → 서로 다른 차 2대 → 터널 안 주의보</td>
 <td><b>행동요령 확인</b> (멈춘 차 C)<br>비상등·트렁크·문 신호로 체크, 남은 "신고"만 안내</td>
 <td><b>터널 앞 재안내</b> (차 D)<br>정차 알림으로 바뀌고, 터널 1km 앞에서 한 번 더</td>
 </tr>
@@ -89,7 +89,7 @@
 </tr>
 </table>
 
-<sub>Pleos Connect 앱 창 크기(세로 1칸 920×1330)로 맞춘 에뮬레이터에서 찍은 실제 실행 화면. 아래쪽 시연 조작판은 잘랐다(<a href="docs/screens/0_demo.png">조작판 포함 화면</a>).</sub>
+<sub>Pleos Connect 앱 창 크기(세로 1칸 920×1330)로 맞춘 에뮬레이터에서 찍은 실제 실행 화면(v0.2.0). 시연 조작판은 숨기고 찍었다(<a href="docs/screens/0_demo.png">조작판 포함 화면</a>).</sub>
 
 ### 움직이는 장면
 
@@ -97,23 +97,27 @@
 <tr>
 <td width="45%"><img src="docs/demo-preview.gif" width="100%" alt="터널 2km 뒤 차 D의 화면: 주의보가 생기자 내 줄에서 위험 지점까지 빨간 픽셀이 차례로 켜지고, 이어서 멈춘 차 알림으로 바뀐다"></td>
 <td>
-<b>시연 2 · 터널 2km 뒤 차 D (22초)</b><br><br>
+<b>시연 2 · 터널 2km 뒤 차 D (18초)</b><br><br>
 1. 터널 안에서 앞차 둘이 거의 동시에 급제동하면 주의보가 생긴다.<br>
 2. 내 줄에서 위험 지점까지 픽셀이 한 번 차례로 켜졌다 꺼진다. 거리를 눈으로 보여 주는, 이 앱의 유일한 움직임이다.<br>
 3. 그중 한 대가 멈춰 서면 더 급한 "멈춘 차" 알림 하나로 바뀐다.<br><br>
-<sub>에뮬레이터 실제 화면을 녹화했다. 시연 조작판은 잘랐다.</sub>
+<sub>에뮬레이터 실제 화면(v0.2.0)을 녹화했다. 시연 조작판은 숨겼다.</sub>
 </td>
 </tr>
 </table>
 
 ## 디자인
 
-현대차 아이오닉 램프 캠페인 "Pixel by Pixel"(2023)의 한 문장에서 출발했다: *픽셀 하나는 깜빡일 뿐이지만, 모이면 더 큰 것이 된다.* 니어바이에서 픽셀 하나는 차 한 대이고, 모이면 길이 된다.
+현대차 아이오닉 램프 캠페인 "Pixel by Pixel"(2023)의 한 문장에서 출발했다: *픽셀 하나는 깜빡일 뿐이지만, 모이면 더 큰 것이 된다.* 니어바이에서 픽셀 하나는 도로 200m이고, 모이면 길이 된다.
 
-- **앞길 램프**: 왼쪽 기둥은 파라메트릭 픽셀처럼 네모 칸을 쌓은 램프다. 한 줄이 200m, 내 줄은 모래색, 위험은 Active Red, 합류는 Active Blue로 켜진다.
+세 앱이 같은 차 안에서 같은 앱처럼 보이지 않도록 화면 문법부터 나눴다. 니어바이는 **밝은 도로 위 램프와 표지판**이다.
+
+- **밝은 도로**: 바탕은 낮 도로의 연회색(#EEF0F2). 다른 두 앱이 남색·하늘색이라, 같은 차에서 켜도 바로 구분된다.
+- **앞길 램프**: 왼쪽 기둥은 파라메트릭 픽셀처럼 네모 칸을 쌓은 램프다. 한 줄이 200m, 위가 앞쪽이다. 내 줄은 남색, 위험은 Active Red, 합류는 Active Blue로 켜지고 다른 차의 위치는 그리지 않는다.
+- **표지판처럼 읽히는 알림**: 오른쪽은 "2.3 km 앞" 거리 숫자를 가장 크게, 그 아래 무엇인지 한 줄, 근거·범위·다시 알림·사라짐을 표 한 장으로. 말로 하는 안내는 맨 아래 흰 칸에 그대로 적는다.
 - **움직임은 하나만**: 새 알림이 오면 내 줄에서 그 지점까지 픽셀이 한 번 차례로 켜졌다 꺼진다. 거리를 눈으로 보여 주는 용도다.
-- **강조는 램프에만**: 알림 카드는 색을 칠하지 않고 같은 픽셀 세 칸으로 종류만 보여 준다.
-- 색은 현대차 CI(Hyundai Blue, Active Red, Active Blue, Sand), 서체는 Pleos 공식 Asta Sans.
+- 색은 현대차 CI(Hyundai Blue, Active Red, Active Blue).
+- 서체는 Asta Sans(42dot, OFL). 현대차 광고에 쓰이는 Hyundai Sans는 배포할 수 없는 전용 서체라, Pleos가 쓰는 같은 계열 공개 서체로 세 앱을 통일했다. 한국어는 어절 단위로만 줄을 바꾼다(`WordBreak.Phrase`).
 
 ## 판정 규칙
 
@@ -187,8 +191,8 @@ adb shell am start -n com.botdue.nearby/.MainActivity --ei scenario 1 --es car D
 | --- | --- |
 | 판정 엔진(core) | 완료, 테스트 25개 (규칙별 + 시나리오 처음부터 끝까지) |
 | 중계 서버 | 완료, WebSocket 두 연결 간 배달 테스트 1개. 에뮬레이터 앱 ↔ PC 서버 ↔ 다른 차(스크립트) 합류 예고 오가는 것 확인 |
-| 시연 영상 | 완료. 70초, 차 4대 시나리오를 차마다 시점을 바꿔 녹화 (`docs/demo.mp4`) |
-| 디자인 | 완료. 현대차 "Pixel by Pixel" 캠페인에서 출발한 앞길 램프와 점등 움직임 ([디자인](#디자인)) |
+| 시연 영상 | 완료(v7). 69초, 도로를 위에서 내려다본 장면 위에 차 4대의 화면을 나란히 (`docs/demo.mp4`) |
+| 디자인 | 완료(v0.2.0). 현대차 "Pixel by Pixel" 캠페인에서 출발한 앞길 램프, 밝은 도로 바탕과 표지판처럼 읽히는 알림으로 다른 두 앱과 화면 문법을 나눔 ([디자인](#디자인)) |
 | 차량 앱 화면 | 완료 (주행·행동요령·신고 도우미·지도). 휴대폰 에뮬레이터를 Pleos 창 크기로 맞춰 확인, Pleos 이미지에서는 아직 |
 | Pleos SDK 연결 | 예정. `VehicleSample`을 Vehicle SDK(Brake·TurnSignal·Light·Door), CarPropertyManager(속도·기어), NaviHelper(경로·합류 지점·터널) 콜백으로 채운다 |
 | 음성 | 예정. 지금은 낱말 규칙(`KeywordIntentReader`), Gleo AI STT·LLM으로 바꾼다 |
