@@ -109,18 +109,9 @@
 
 ## 시스템 구조
 
-```mermaid
-flowchart LR
-    subgraph CAR["차 (Pleos Connect 앱)"]
-        SIG["차량 신호<br/>Vehicle SDK · CarPropertyManager<br/>NaviHelper · STT"] --> CLIENT["NearbyClient<br/>급제동·정차·비상등 감사 감지<br/>행동요령 확인 · 신고 메모"]
-        CLIENT --> UI["화면 · TTS<br/>앞길 띠 · 알림 카드"]
-    end
-    subgraph SERVER["중계 서버 (Ktor WebSocket)"]
-        HUB["NearbyHub<br/>합류 묶기 · 주의보 판정(HazardBoard)<br/>정차 알림 · 인사 배달"]
-    end
-    CLIENT -- "익명 ID + 도로 구간 + 정해진 문구" --> HUB
-    HUB -- "구간 가운데 위치 + 정해진 문구 (보낸 차 ID 없음)" --> CLIENT
-```
+<img src="docs/architecture.png" width="100%" alt="시스템 구조도: 차량 입력, 신호 공급원, 차 쪽 판정(core), 화면, 차량 출력, 그리고 아래 중계 서버(연결표, NearbyHub, 합류 예고, HazardBoard, 정차 알림, 감사·문제 배달)">
+
+<sub>diagrams.net으로 그렸다. 원본 <a href="docs/architecture.drawio">docs/architecture.drawio</a>는 <a href="https://app.diagrams.net">app.diagrams.net</a>에서 파일 › 열기로 바로 고칠 수 있다. 실선은 지금 동작, 점선은 연결 예정.</sub>
 
 ```text
 core/    차와 서버가 함께 쓰는 판정 규칙·통신 형식 (Kotlin JVM, 안드로이드 의존 없음)
