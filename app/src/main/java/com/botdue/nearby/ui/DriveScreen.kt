@@ -63,7 +63,7 @@ fun DriveScreen(
         )
         Spacer(Modifier.height(28.px))
         Row(Modifier.weight(1f)) {
-            if (s != null) RoadStrip(s.pos, notices, tunnel, Modifier.width(190.px))
+            if (s != null) RoadStrip(s.pos, notices, tunnel, Modifier.width(250.px))
             Spacer(Modifier.width(32.px))
             Column(Modifier.weight(1f)) {
                 val list = client.checklist
@@ -96,21 +96,33 @@ private fun Quiet() {
     }
 }
 
+/**
+ * 지금 가장 급한 알림. 색으로 크게 칠하지 않고, 램프와 같은 픽셀 세 칸으로만 종류를 보여 준다
+ * (강조는 왼쪽 램프 한 곳에 모은다).
+ */
 @Composable
 private fun BigNotice(n: Notice) {
-    val danger = n.kind.danger()
+    val lit = when {
+        n.kind.danger() -> pal.danger
+        n.kind == Notice.Kind.MERGE || n.kind == Notice.Kind.FLOW -> pal.accent
+        else -> pal.me
+    }
     Column(
         Modifier
             .fillMaxWidth()
-            .background(if (danger) pal.danger else pal.cardBg, RoundedCornerShape(18.px))
+            .background(pal.cardBg, RoundedCornerShape(10.px))
             .padding(32.px)
     ) {
-        val fg = if (danger) pal.dangerFg else pal.cardFg
-        T(kindLabel(n.kind), 22.tx, weight = FontWeight.SemiBold, color = fg)
-        Spacer(Modifier.height(10.px))
-        T(n.title, 44.tx, weight = FontWeight.ExtraBold, color = fg, lineHeight = 1.2f)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            repeat(3) {
+                Box(Modifier.padding(end = 6.px).size(22.px).background(lit, RoundedCornerShape(3.px)))
+            }
+            T(kindLabel(n.kind), 22.tx, Modifier.padding(start = 10.px), weight = FontWeight.SemiBold, color = pal.sub)
+        }
+        Spacer(Modifier.height(18.px))
+        T(n.title, 46.tx, weight = FontWeight.ExtraBold, color = pal.cardFg, lineHeight = 1.2f)
         Spacer(Modifier.height(14.px))
-        T(n.detail, 26.tx, color = fg)
+        T(n.detail, 26.tx, color = pal.cardFg)
     }
 }
 
@@ -120,7 +132,7 @@ private fun SmallNotice(n: Notice) {
         Box(
             Modifier
                 .size(18.px)
-                .background(if (n.kind.danger()) pal.danger else if (n.kind == Notice.Kind.MERGE) pal.accent else pal.warm, RoundedCornerShape(4.px))
+                .background(if (n.kind.danger()) pal.danger else if (n.kind == Notice.Kind.MERGE) pal.accent else pal.me, RoundedCornerShape(3.px))
         )
         T(n.title, 24.tx, Modifier.padding(start = 14.px))
     }
@@ -141,7 +153,10 @@ private fun kindLabel(k: Notice.Kind) = when (k) {
 @Composable
 private fun ChecklistPanel(list: SafetyChecklist, completed: Set<SafetyChecklist.Step>, current: SafetyChecklist.Step?) {
     Column {
-        T(if (list.inTunnel) "터널 안 정차" else "사고·고장 정차", 22.tx, weight = FontWeight.SemiBold, color = pal.danger)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            repeat(3) { Box(Modifier.padding(end = 6.px).size(22.px).background(pal.danger, RoundedCornerShape(3.px))) }
+            T(if (list.inTunnel) "터널 안 정차" else "사고·고장 정차", 22.tx, Modifier.padding(start = 10.px), weight = FontWeight.SemiBold, color = pal.sub)
+        }
         Spacer(Modifier.height(8.px))
         T("뒤차에 알렸어요", 40.tx, weight = FontWeight.ExtraBold)
         Spacer(Modifier.height(8.px))
@@ -184,7 +199,10 @@ private fun ChecklistPanel(list: SafetyChecklist, completed: Set<SafetyChecklist
 @Composable
 private fun ReportPanel(lines: List<String>) {
     Column(verticalArrangement = Arrangement.spacedBy(14.px)) {
-        T("신고 도우미", 22.tx, weight = FontWeight.SemiBold, color = pal.accent)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            repeat(3) { Box(Modifier.padding(end = 6.px).size(22.px).background(pal.me, RoundedCornerShape(3.px))) }
+            T("신고 도우미", 22.tx, Modifier.padding(start = 10.px), weight = FontWeight.SemiBold, color = pal.sub)
+        }
         T("기록해 둔 순간", 40.tx, weight = FontWeight.ExtraBold)
         lines.forEach { T(it, 26.tx) }
     }
