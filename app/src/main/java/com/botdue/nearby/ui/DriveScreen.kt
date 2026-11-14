@@ -1,6 +1,7 @@
 package com.botdue.nearby.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -34,8 +38,9 @@ private fun ordered(list: Collection<Notice>) =
 private fun Notice.Kind.danger() = this == Notice.Kind.STOPPED_AHEAD || this == Notice.Kind.HAZARD_AHEAD || this == Notice.Kind.HAZARD_BEHIND
 
 /**
- * 주행 화면 (세로 1칸). 도로 표지판처럼 읽힌다: 왼쪽은 앞길 램프, 오른쪽은 가장 급한 알림 하나를
- * "거리 → 무엇 → 근거 표" 순서로. 내 차가 멈추면 오른쪽이 행동요령으로, 차를 세우면 신고 도우미로 바뀐다.
+ * 주행 화면 (세로 1칸). 도로 표지판처럼 읽힌다: 왼쪽은 앞길 램프, 오른쪽은 가장 급한 알림 하나.
+ * 달리는 중에는 "거리 숫자 → 무엇 한 줄 → 말한 안내"만 보인다. 근거·범위·다시 알림·사라짐 표는
+ * 기어 P이거나 알림을 눌렀을 때만 펼친다. 내 차가 멈추면 오른쪽이 행동요령으로, 차를 세우면 신고 도우미로 바뀐다.
  */
 @Composable
 fun DriveScreen(
@@ -44,10 +49,12 @@ fun DriveScreen(
     tunnel: IntRange?,
     clock: String,
     modifier: Modifier = Modifier,
+    onCall: (String) -> Unit = {},
 ) {
     val s = client.last
     // version이 바뀔 때마다 알림 목록을 다시 읽는다 (NearbyClient는 Compose 상태가 아니다)
     val notices = remember(version) { ordered(client.notices.values) }
+    var openedKey by remember { mutableStateOf<String?>(null) }
     Row(modifier.fillMaxSize().background(pal.bg)) {
         Box(
             Modifier
@@ -81,9 +88,15 @@ fun DriveScreen(
             when {
                 list != null -> ChecklistPanel(list, list.completed.toSet(), list.current)
                 client.showReportGuide -> ReportPanel(client.reportGuide())
+                client.showCallGuide -> CallPanel(onCall)
+                client.question != null -> QuestionPanel(client.question!!)
                 notices.isEmpty() -> Quiet()
                 else -> {
-                    BigNotice(notices.first(), s?.pos)
+                    val top = notices.first()
+                    val open = s?.parked == true || openedKey == top.key
+                    Column(Modifier.clickable { openedKey = if (openedKey == top.key) null else top.key }) {
+                        BigNotice(top, s?.pos, open)
+                    }
                     notices.drop(1).take(2).forEach { SmallNotice(it) }
                 }
             }
@@ -94,7 +107,10 @@ fun DriveScreen(
                     .background(pal.cardBg, RoundedCornerShape(8.px))
                     .padding(horizontal = 30.px, vertical = 26.px)
             ) {
-                T(client.spoken.lastOrNull() ?: "알릴 일이 생기면 한 번만, 짧게 말해요.", 28.tx, color = pal.cardFg, lineHeight = 1.5f)
+                T("말한 안내", 20.tx, color = pal.sub)
+                Spacer(Modifier.height(8.px))
+                // 문장 속 거리는 지금 남은 거리로 맞춘다 (위의 큰 숫자와 같게)
+                T(client.caption() ?: "알릴 일이 생기면 한 번만, 짧게 말해요.", 28.tx, color = pal.cardFg, lineHeight = 1.5f)
             }
         }
     }
@@ -147,8 +163,9 @@ private fun Notice.facts(): List<Pair<String, String>> = when (kind) {
     else -> emptyList()
 }
 
+/** [open]이 false(달리는 중)면 표를 숨기고 그만큼 거리 숫자를 키운다 */
 @Composable
-private fun ColumnScope.BigNotice(n: Notice, me: RoadPos?) {
+private fun ColumnScope.BigNotice(n: Notice, me: RoadPos?, open: Boolean) {
     val d = if (me != null && n.at != null) me.distanceTo(n.at!!) else null
     val showDistance = d != null && d > 0 && n.kind in setOf(Notice.Kind.HAZARD_AHEAD, Notice.Kind.STOPPED_AHEAD, Notice.Kind.MERGE)
     val tone = when {
@@ -159,17 +176,17 @@ private fun ColumnScope.BigNotice(n: Notice, me: RoadPos?) {
     if (showDistance) {
         val (num, unit) = distanceParts(d!!)
         Row(verticalAlignment = Alignment.Bottom) {
-            T(num, 104.tx, weight = FontWeight.ExtraBold, lineHeight = 1f)
-            T(unit, 40.tx, Modifier.padding(start = 10.px, bottom = 10.px), weight = FontWeight.Bold)
+            T(num, if (open) 104.tx else 176.tx, weight = FontWeight.ExtraBold, lineHeight = 1f)
+            T(unit, if (open) 40.tx else 52.tx, Modifier.padding(start = 12.px, bottom = if (open) 10.px else 18.px), weight = FontWeight.Bold)
         }
-        Spacer(Modifier.height(16.px))
-        T(n.what(), 42.tx, weight = FontWeight.ExtraBold, color = tone, lineHeight = 1.3f)
+        Spacer(Modifier.height(if (open) 16.px else 24.px))
+        T(n.what(), if (open) 42.tx else 50.tx, weight = FontWeight.ExtraBold, color = tone, lineHeight = 1.3f)
     } else {
         T(n.what(), 52.tx, weight = FontWeight.ExtraBold, color = if (n.kind.danger()) tone else pal.fg, lineHeight = 1.25f)
         Spacer(Modifier.height(16.px))
         T(n.detail, 28.tx, color = pal.sub, lineHeight = 1.5f)
     }
-    val facts = n.facts()
+    val facts = if (open) n.facts() else emptyList()
     if (facts.isNotEmpty()) {
         Spacer(Modifier.height(40.px))
         facts.forEachIndexed { i, (k, v) ->
@@ -229,6 +246,26 @@ private fun ChecklistPanel(list: SafetyChecklist, completed: Set<SafetyChecklist
         }
         if (i == SafetyChecklist.Step.entries.lastIndex) Divider()
     }
+}
+
+/** 멈춘 차 옆을 지나간 뒤 묻는 말. 답은 말로 한다 */
+@Composable
+private fun QuestionPanel(q: Pair<String, String>) {
+    T(q.first, 52.tx, weight = FontWeight.ExtraBold, lineHeight = 1.25f)
+    Spacer(Modifier.height(20.px))
+    T(q.second, 28.tx, color = pal.sub, lineHeight = 1.5f)
+}
+
+/** "신고할까요?"에 "응"이라고 답했을 때: 번호를 누르면 전화 앱이 열린다 (자동으로 걸지 않는다) */
+@Composable
+private fun CallPanel(onCall: (String) -> Unit) {
+    T("신고 번호", 52.tx, weight = FontWeight.ExtraBold, lineHeight = 1.2f)
+    Spacer(Modifier.height(14.px))
+    T("누르면 전화 앱이 열려요.", 28.tx, color = pal.sub, lineHeight = 1.5f)
+    Spacer(Modifier.height(36.px))
+    OutlineButton("112  경찰", Modifier.fillMaxWidth()) { onCall("112") }
+    Spacer(Modifier.height(18.px))
+    OutlineButton("1588-2504  한국도로공사", Modifier.fillMaxWidth()) { onCall("15882504") }
 }
 
 @Composable

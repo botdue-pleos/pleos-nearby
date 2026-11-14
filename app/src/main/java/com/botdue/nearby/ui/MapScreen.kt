@@ -44,7 +44,7 @@ fun MapScreen(hotspots: Map<HazardBoard.StatKey, Int>, tunnel: IntRange?, onBack
         Spacer(Modifier.height(30.px))
         T("평일 저녁, 터널 입구 앞뒤에 제보가 몰려요", 44.tx, weight = androidx.compose.ui.text.font.FontWeight.ExtraBold, lineHeight = 1.3f)
         Spacer(Modifier.height(16.px))
-        T("같은 칸에 5건 이상 쌓인 곳만 켜요. 누가 언제 제보했는지는 남기지 않아요. 시연 데이터예요.", 24.tx, color = pal.sub, lineHeight = 1.5f)
+        T("같은 칸에 5건 이상 쌓인 곳만 켜요. 누가 언제 제보했는지는 남기지 않아요.", 24.tx, color = pal.sub, lineHeight = 1.5f)
         Spacer(Modifier.height(24.px))
         Row(Modifier.weight(1f)) {
             Column(Modifier.width(140.px).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(4.px)) {
@@ -79,9 +79,7 @@ fun MapScreen(hotspots: Map<HazardBoard.StatKey, Int>, tunnel: IntRange?, onBack
                 }
             }
         }
-        Spacer(Modifier.height(24.px))
-        T("확장: 이 지도를 지자체·경찰의 단속·시설 개선 위치 자료로", 22.tx, color = pal.sub)
-        Spacer(Modifier.height(20.px))
+        Spacer(Modifier.height(32.px))
         OutlineButton("주행 화면으로", Modifier.width(360.px), onBack)
     }
 }

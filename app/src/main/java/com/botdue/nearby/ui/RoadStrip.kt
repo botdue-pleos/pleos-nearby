@@ -29,7 +29,8 @@ import com.botdue.nearby.core.RoadPos
 import com.botdue.nearby.core.SEGMENT_M
 import com.botdue.nearby.core.demo.MAIN
 
-private const val AHEAD_CELLS = 15
+/** 앞 16줄(내 줄 + 3km), 뒤 5줄(1km). 한 줄 200m라 1km마다 5줄 간격으로 이름표가 붙는다 */
+private const val AHEAD_CELLS = 16
 private const val BEHIND_CELLS = 5
 private const val PIXELS_PER_ROW = 3
 
@@ -117,7 +118,7 @@ fun RoadStrip(me: RoadPos, notices: Collection<Notice>, tunnel: IntRange?, modif
                     kind == Notice.Kind.MERGE -> "합류"
                     k == 5 -> "1km"
                     k == 10 -> "2km"
-                    k == AHEAD_CELLS - 1 -> "3km"
+                    k == 15 -> "3km"
                     k == -BEHIND_CELLS -> "뒤1km"
                     inTunnel && cellStart == tunnel!!.first -> "터널"
                     else -> null

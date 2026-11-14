@@ -1,5 +1,7 @@
 package com.botdue.nearby
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -19,6 +21,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,20 +54,32 @@ import java.time.Instant
 import java.time.ZoneId
 
 class MainActivity : ComponentActivity() {
+    private var start by mutableStateOf(StartAt())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // 화면 캡처·영상용: adb shell am start ... --ei scenario 1 --es car D --ei seek 30 --ez map false
-        val start = StartAt(
-            scenario = intent.getIntExtra("scenario", 0).coerceIn(0, Scenarios.all.lastIndex),
-            car = intent.getStringExtra("car")?.let { runCatching { CarId.valueOf(it) }.getOrNull() } ?: CarId.B,
-            seekSec = intent.getIntExtra("seek", 0),
-            jump = intent.getBooleanExtra("jump", false),
-            map = intent.getBooleanExtra("map", false),
-            clean = intent.getBooleanExtra("clean", false),
-            play = intent.getBooleanExtra("play", false),
-        )
-        setContent { NearbyApp(start) }
+        start = startOf(intent)
+        // 새 시작 값이 오면 시연 한 판을 처음부터 다시 만든다
+        setContent { key(start) { NearbyApp(start) } }
     }
+
+    /** 이미 떠 있을 때 am start를 다시 부르면 여기로 온다. 캡처 옵션(clean 등)을 새로 적용한다 */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        start = startOf(intent)
+    }
+
+    // 화면 캡처·영상용: adb shell am start ... --ei scenario 1 --es car D --ei seek 30 --ez map false
+    private fun startOf(intent: Intent) = StartAt(
+        scenario = intent.getIntExtra("scenario", 0).coerceIn(0, Scenarios.all.lastIndex),
+        car = intent.getStringExtra("car")?.let { runCatching { CarId.valueOf(it) }.getOrNull() } ?: CarId.B,
+        seekSec = intent.getIntExtra("seek", 0),
+        jump = intent.getBooleanExtra("jump", false),
+        map = intent.getBooleanExtra("map", false),
+        clean = intent.getBooleanExtra("clean", false),
+        play = intent.getBooleanExtra("play", false),
+    )
 }
 
 data class StartAt(
@@ -99,7 +114,8 @@ private fun newSession(index: Int, remoteCar: CarId?, onChange: () -> Unit): Ses
 @Composable
 fun NearbyApp(start: StartAt = StartAt()) {
     val palette = if (isSystemInDarkTheme()) NightPalette else DayPalette
-    val assets = LocalContext.current.assets
+    val context = LocalContext.current
+    val assets = context.assets
     val font = remember { astaSans(assets) }
 
     var scenarioIndex by remember { mutableIntStateOf(start.scenario) }
@@ -146,7 +162,12 @@ fun NearbyApp(start: StartAt = StartAt()) {
                 Column(Modifier.weight(1f)) { MapScreen(session.board.hotspots(), player.scenario.tunnel) { showMap = false } }
             } else {
                 // 재생기 상태는 Compose 상태가 아니라서, 바뀐 횟수(version)를 함께 넘겨 다시 그리게 한다
-                DriveScreen(client, version, player.scenario.tunnel, clock, Modifier.weight(1f))
+                DriveScreen(client, version, player.scenario.tunnel, clock, Modifier.weight(1f)) { number ->
+                    // 전화 앱을 열기만 한다 (자동으로 걸지 않는다). 전화 앱이 없는 에뮬레이터에서는 아무 일도 없다
+                    runCatching {
+                        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                }
             }
             if (!start.clean) DemoBar(
                 scenarioIndex = scenarioIndex,
@@ -177,7 +198,7 @@ fun NearbyApp(start: StartAt = StartAt()) {
 
 /**
  * 시연 조작판 (실제 차량 화면에는 없다).
- * 시나리오·보는 차를 고르고, 재생하고, 말하기 버튼으로 Gleo AI 음성 대신 문장을 넣는다.
+ * 시나리오·보는 차를 고르고, 재생하고, 말하기 버튼으로 음성 인식(STT) 대신 문장을 넣는다.
  */
 @Composable
 private fun DemoBar(
@@ -222,7 +243,7 @@ private fun DemoBar(
         }
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.px), verticalAlignment = Alignment.CenterVertically) {
             T("말하기", 20.tx, color = pal.sub)
-            listOf("고마워", "방금 위험한 차 있었어", "신고해줘", "앞차 주유구 열렸어", "신고했어").forEach { Chip("\"$it\"", onClick = { onVoice(it) }) }
+            listOf("고마워", "방금 위험한 차 있었어", "신고해줘", "앞차 주유구 열렸어", "신고했어", "있어", "없어", "응", "아니").forEach { Chip("\"$it\"", onClick = { onVoice(it) }) }
         }
     }
 }
