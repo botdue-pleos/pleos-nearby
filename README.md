@@ -86,11 +86,25 @@
 <tr>
 <td><b>후방 주의</b> (앞서 가는 차 A)<br>누구인지 몰라도 방향과 시간만으로 대비</td>
 <td><b>신고 도우미</b> (차 B, 주차 후)<br>"신고해줘"라고 말한 순간을 돌려준다</td>
-<td><b>위험 지점 지도</b><br>평일 저녁 터널 입구에 제보가 몰린다 (시연 데이터). 확장: 지자체·경찰의 단속·시설 개선 위치 자료로</td>
+<td><b>위험 지점 지도</b><br>평일 저녁 터널 입구에 제보가 몰린다 (시연 데이터, 지자체·경찰 위치 자료로 확장 가능)</td>
+</tr>
+<tr>
+<td><img src="docs/screens/10_stopped500.png" alt="멈춘 차 500m 앞 재안내"></td>
+<td><img src="docs/screens/11_stillthere.png" alt="지나간 뒤 확인 질문"></td>
+<td><img src="docs/screens/12_reportnum.png" alt="신고 번호 안내"></td>
+</tr>
+<tr>
+<td><b>멈춘 차 앞 재안내</b> (뒤차 D)<br>500m 앞에서 "속도를 줄이고 비켜 가세요" 한 번 더</td>
+<td><b>지나간 뒤 확인</b> (뒤차 D)<br>"아직 서 있었나요?"에 "있어/없어" → 뒤차 알림을 이어 두거나 지운다</td>
+<td><b>신고 번호</b> (뒤차 D)<br>원하면 112·1588-2504. 누르면 전화 앱만 열리고, 멈추라고는 하지 않는다</td>
+</tr>
+<tr>
+<td><img src="docs/screens/night_hazard.png" alt="야간 앞길 주의보"></td>
+<td colspan="2" valign="top"><b>야간</b><br>차의 야간 모드를 따라 바탕이 어두워진다. 위험은 같은 빨강, 내 줄은 밝은 칸.<br><br><img src="docs/mockups/hero_night.jpg" alt="야간 고속도로에서 본 니어바이 차 안 화면"></td>
 </tr>
 </table>
 
-<sub>Pleos Connect 앱 창 크기(세로 1칸 920×1330)로 맞춘 에뮬레이터에서 찍은 실제 실행 화면(v0.2.0, v0.3.0 화면으로 다시 찍을 예정). 시연 조작판은 숨기고 찍었다(<a href="docs/screens/0_demo.png">조작판 포함 화면</a>).</sub>
+<sub>Pleos Connect 앱 창 크기(세로 1칸 920×1330)로 맞춘 에뮬레이터에서 찍은 실제 실행 화면(v0.3.0). 시연 조작판은 숨기고 찍었다(<a href="docs/screens/0_demo.png">조작판 포함 화면</a>).</sub>
 
 ### 움직이는 장면
 
