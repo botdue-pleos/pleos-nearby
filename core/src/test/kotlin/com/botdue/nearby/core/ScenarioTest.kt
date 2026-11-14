@@ -5,6 +5,7 @@ import com.botdue.nearby.core.demo.DemoClock
 import com.botdue.nearby.core.demo.LocalHubLink
 import com.botdue.nearby.core.demo.ScenarioPlayer
 import com.botdue.nearby.core.demo.Scenarios
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -48,6 +49,17 @@ class ScenarioTest {
         assertTrue("비상등을 이미 켰으니 켜라고 말하지 않는다\n$c", !c.contains("비상등을 켜세요"))
         val b = p.clients.getValue(CarId.B)
         assertTrue(b.spoken.joinToString(), b.showReportGuide && b.memos.size == 1)
+    }
+
+    @Test
+    fun `시연 2 - 뒤차 D는 500m 앞에서 다시 듣고, 지나간 뒤 "있어", 신고 번호까지`() {
+        val p = play(Scenarios::tunnel)
+        val d = p.heard(CarId.D)
+        val order = listOf("곧 터널이에요", "앞에 멈춘 차가 있어요. 속도를 줄이고 비켜 가세요", "방금 지나간 곳에 아직 차가 서 있었나요", "신고할까요", "1588-2504")
+        order.forEach { assertTrue("$it\n$d", d.contains(it)) }
+        assertEquals("순서대로", order.map { d.indexOf(it) }.sorted(), order.map { d.indexOf(it) })
+        assertTrue(d, p.clients.getValue(CarId.D).showCallGuide)
+        assertTrue("D는 끝까지 멈추지 않았다", p.clients.getValue(CarId.D).last!!.speedKmh >= 60)
     }
 
     @Test

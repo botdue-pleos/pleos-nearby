@@ -165,6 +165,12 @@ class DetectorsTest {
         assertEquals(Intent.MemoForReport, r.read("신고해줘"))
         assertEquals(Intent.Reported, r.read("신고했어"))
         assertEquals(Intent.TellProblem(Problem.FUEL_DOOR), r.read("앞차 주유구 열렸어"))
+        assertEquals("위험 제보가 \"있었어\"보다 먼저", Intent.ReportHazard, r.read("방금 위험한 차 있었어"))
+        assertEquals(Intent.StillThere(true), r.read("있어"))
+        assertEquals(Intent.StillThere(true), r.read("아직 서 있었어"))
+        assertEquals(Intent.StillThere(false), r.read("없어"))
+        assertEquals(Intent.Answer(true), r.read("응"))
+        assertEquals(Intent.Answer(false), r.read("아니"))
     }
 
     @Test

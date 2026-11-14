@@ -52,6 +52,13 @@ data class Stopped(override val id: String, val pos: RoadPos, val inTunnel: Bool
 @Serializable @SerialName("resumed")
 data class Resumed(override val id: String) : Uplink
 
+/**
+ * 멈춘 차 옆을 지나간 뒤차의 답: 아직 서 있었나. [alertId]는 서버가 만든 정차 알림 번호라 멈춘 차를 가리키지 않는다.
+ * 그 정차 알림을 받은 차의 답만 센다.
+ */
+@Serializable @SerialName("stop_check")
+data class StopCheck(override val id: String, val alertId: String, val stillThere: Boolean) : Uplink
+
 @Serializable @SerialName("thanks")
 data class Thanks(override val id: String, val pos: RoadPos, val via: ThanksVia) : Uplink
 

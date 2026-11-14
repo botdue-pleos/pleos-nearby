@@ -115,10 +115,52 @@ class NearbyHubTest {
     }
 
     @Test
+    fun `지나간 뒤차가 "있어"라고 답하면 멈춘 차 신호가 끊겨도 정차 알림을 10분 더 이어 둔다`() {
+        hub.receive(Presence("behind", main(5000), 90))
+        val alert = hub.receive(Stopped("s", main(6300))).single().msg as StoppedAlert
+        now += 9 * 60_000L
+        hub.receive(Presence("behind", main(6500), 60))
+        assertTrue(hub.receive(StopCheck("behind", alert.alertId, stillThere = true)).isEmpty())
+        now += 9 * 60_000L
+        hub.receive(Presence("behind", main(9000), 90))
+        assertTrue("답한 지 9분: 아직 남아 있다", hub.tick().isEmpty())
+        now += 2 * 60_000L
+        hub.receive(Presence("behind", main(9000), 90))
+        assertEquals(AlertCleared(alert.alertId), hub.tick().single().msg)
+    }
+
+    @Test
+    fun `"없어" 두 표면 지우지만, 멈춘 차가 아직 신호를 보내거나 알림을 안 받은 차의 표는 세지 않는다`() {
+        hub.receive(Presence("d1", main(5000), 90))
+        hub.receive(Presence("d2", main(4800), 90))
+        hub.receive(Presence("s", main(6300), 0))
+        val alert = hub.receive(Stopped("s", main(6300))).first().msg as StoppedAlert
+        hub.receive(Presence("stranger", main(9000), 90))
+        assertTrue(hub.receive(StopCheck("d1", alert.alertId, false)).isEmpty())
+        assertTrue("알림을 받지 않은 차의 표", hub.receive(StopCheck("stranger", alert.alertId, false)).isEmpty())
+        assertTrue("멈춘 차가 방금 신호를 보냈다", hub.receive(StopCheck("d2", alert.alertId, false)).isEmpty())
+        now += 11_000
+        hub.receive(Presence("d1", main(7000), 90))
+        val out = hub.receive(StopCheck("d2", alert.alertId, false))
+        assertEquals(setOf("d1", "d2"), out.map { it.to }.toSet())
+        assertTrue(out.all { it.msg == AlertCleared(alert.alertId) })
+    }
+
+    @Test
+    fun `"있어"가 오면 그때까지의 "없어" 표는 버린다`() {
+        listOf("d1", "d2", "d3").forEach { hub.receive(Presence(it, main(5000), 90)) }
+        val alert = hub.receive(Stopped("s", main(6300))).first().msg as StoppedAlert
+        now += 11_000
+        hub.receive(StopCheck("d1", alert.alertId, false))
+        hub.receive(StopCheck("d2", alert.alertId, true))
+        assertTrue(hub.receive(StopCheck("d3", alert.alertId, false)).isEmpty())
+    }
+
+    @Test
     fun `통신 형식에는 차량 번호·차종·색상·자유 텍스트 칸이 없다`() {
         val samples: List<Any> = listOf(
             Presence("id", main(1), 1, MergePlan(main(2), 3)), BrakeSignal("id", main(1)), VoiceReport("id", main(1)),
-            Stopped("id", main(1)), Thanks("id", main(1), ThanksVia.VOICE), ProblemNotice("id", main(1), Problem.TRUNK),
+            Stopped("id", main(1)), StopCheck("id", "s1", true), Thanks("id", main(1), ThanksVia.VOICE), ProblemNotice("id", main(1), Problem.TRUNK),
         )
         val json = samples.joinToString { NearbyJson.encodeToString(Uplink.serializer(), it as Uplink) }
         listOf("plate", "model", "color", "text", "message").forEach { assertFalse(it, json.contains("\"$it\"")) }

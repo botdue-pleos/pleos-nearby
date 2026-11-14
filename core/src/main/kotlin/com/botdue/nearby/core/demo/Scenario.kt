@@ -94,6 +94,8 @@ object Scenarios {
      * 터널(본선 6~7km) 안에서 B·C가 거의 동시에 급제동한다(자동 감지 2점 → 주의보).
      * C는 그대로 멈춰 서고, 행동요령을 차량 신호로 하나씩 확인받는다.
      * 뒤의 D는 터널에 들어가기 전에, 앞의 A는 후방 주의를 받는다. B는 "신고해줘"라고 말해 두고 나중에 세운다.
+     * D는 멈춘 차 500m 앞에서 한 번 더 듣고, 속도를 줄여 옆을 지나간 뒤 "아직 서 있었나요?"에 "있어",
+     * "신고할까요?"에 "응"이라고 답한다. D는 끝까지 멈추지 않는다.
      */
     fun tunnel(): Scenario {
         val base = epoch(2026, 11, 20, 18, 40)
@@ -113,12 +115,20 @@ object Scenarios {
         val b = Track(6150, bSpeed)
         val cSpeed = { s: Double -> if (s < 5.5) 90.0 else lerp(90.0, 0.0, (s - 5.5) / 2) }
         val c = Track(6200, cSpeed)
-        val d = Track(3800) { 90.0 }
+        val dSpeed = { s: Double ->
+            when {
+                s < 84 -> 90.0
+                s < 87 -> lerp(90.0, 60.0, (s - 84) / 3)   // 멈춘 차 300m 앞, 터널 들어가며 줄인다
+                s < 104 -> 60.0
+                else -> lerp(60.0, 90.0, (s - 104) / 4)    // 옆을 지나 다시 속도를 낸다
+            }
+        }
+        val d = Track(3800, dSpeed)
         fun road(m: Int) = RoadPos(MAIN, m, Heading.UP)
         return Scenario(
             title = "시연 2 · 터널 안 주의보",
-            summary = "터널 안에서 B·C가 함께 급제동해 주의보가 생겨요. 멈춘 C는 행동요령을, 뒤의 D는 터널 앞 경고를 받아요.",
-            durationMs = 80_000,
+            summary = "터널 안에서 B·C가 함께 급제동해 주의보가 생겨요. 멈춘 C는 행동요령을, 뒤의 D는 터널 앞 경고를 받고 지나간 뒤 아직 서 있었는지 답해요.",
+            durationMs = 125_000,
             startAt = base,
             roles = mapOf(CarId.A to "터널 안, 앞서 감", CarId.B to "터널 안, 급제동 후 지나감", CarId.C to "터널 안, 급제동 후 멈춤", CarId.D to "터널 2km 뒤"),
             cars = mapOf(
@@ -139,11 +149,14 @@ object Scenarios {
                         }
                     }
                 },
-                CarId.D to { t -> road(d.meterAt(t)).let { p -> at(base, t, p, 90.0) { copy(inTunnel = p.meter in tunnel) } } },
+                CarId.D to { t -> road(d.meterAt(t)).let { p -> at(base, t, p, dSpeed(t / 1000.0)) { copy(inTunnel = p.meter in tunnel) } } },
             ),
             voices = listOf(
                 Scenario.Voice(9_000, CarId.B, "신고해줘"),
                 Scenario.Voice(42_000, CarId.C, "신고했어"),
+                // 113초쯤 D가 멈춘 차를 지나 "아직 서 있었나요?"를 듣는다
+                Scenario.Voice(116_000, CarId.D, "있어"),
+                Scenario.Voice(120_000, CarId.D, "응"),
             ),
             tunnel = tunnel,
             canJump = true,

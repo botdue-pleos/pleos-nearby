@@ -9,6 +9,7 @@ data class Delivery(val to: String, val msg: Downlink)
  * 서버가 기억하는 것
  * - 차별 최근 위치·속도·다음 합류 지점: 익명 ID 기준, 10초 동안 소식이 없으면 지운다
  * - 주의보·정차 알림: 도로 구간과 시각만, 5~10분 뒤 지운다
+ * - 정차 알림에 대한 뒤차의 답(있음·없음): 그 알림이 지워질 때 함께 사라진다
  * 기억하지 않는 것: 차량 번호·차종·색상(받을 칸이 없다), 제보자 고정 ID, 자유 텍스트
  */
 class NearbyHub(
@@ -19,6 +20,10 @@ class NearbyHub(
 
     private class Stop(val alertId: String, val at: RoadPos, val inTunnel: Boolean, var lastSeen: Long) {
         val notified = mutableSetOf<String>()
+        /** 지나간 뒤차가 "아직 있어"라고 답한 마지막 시각 */
+        var confirmedAt = lastSeen
+        /** "없어"라고 답한 차(익명 ID). "있어"가 오면 비운다 */
+        val goneVotes = mutableSetOf<String>()
     }
 
     private val cars = mutableMapOf<String, Car>()
@@ -45,6 +50,20 @@ class NearbyHub(
             is Resumed -> stops.remove(up.id)?.let { stop ->
                 out += stop.notified.map { Delivery(it, AlertCleared(stop.alertId)) }
             }
+            is StopCheck -> stops.entries.firstOrNull { it.value.alertId == up.alertId && up.id in it.value.notified }?.let { (carId, stop) ->
+                if (up.stillThere) {
+                    // 있음: 알림을 이어 둔다 (멈춘 차의 신호가 끊겨도 이때부터 10분)
+                    stop.confirmedAt = t
+                    stop.goneVotes.clear()
+                } else {
+                    stop.goneVotes += up.id
+                    // 없음 2표, 그리고 멈춘 차가 10초 넘게 스스로 신호를 보내지 않을 때만 지운다
+                    if (stop.goneVotes.size >= MIN_GONE_VOTES && t - stop.lastSeen > 10_000) {
+                        stops.remove(carId)
+                        out += stop.notified.map { Delivery(it, AlertCleared(stop.alertId)) }
+                    }
+                }
+            }
             is Thanks -> {
                 // 바로 뒤(150m 안) 같은 방향 차 한 대에만
                 val target = nearest(up.id, up.pos, 1..150, behind = true)
@@ -68,7 +87,7 @@ class NearbyHub(
         cars.entries.removeAll { t - it.value.seenAt > 10_000 }
         board.expire(t).forEach { a -> out += a.notified.filter { it in cars }.map { Delivery(it, AlertCleared(a.alertId)) } }
         stops.entries.removeAll { (_, s) ->
-            val gone = t - s.lastSeen > 10 * 60_000L
+            val gone = t - maxOf(s.lastSeen, s.confirmedAt) > 10 * 60_000L
             if (gone) out += s.notified.map { Delivery(it, AlertCleared(s.alertId)) }
             gone
         }
@@ -145,4 +164,9 @@ class NearbyHub(
         }.minByOrNull { it.second }?.first
 
     private fun behindRange(inTunnel: Boolean) = if (inTunnel) 3000 else 2000
+
+    private companion object {
+        /** 정차 알림을 지우는 데 필요한 "없어" 답 (서로 다른 차) */
+        const val MIN_GONE_VOTES = 2
+    }
 }
