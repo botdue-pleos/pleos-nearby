@@ -14,6 +14,7 @@ data class VehicleSample(
     val turnSignalOn: Boolean = false,
     val trunkOpen: Boolean = false,
     val doorOpen: Boolean = false,
+    /** 기어 P */
     val parked: Boolean = false,
     /** NaviHelper: 지금 터널 안인가 (TBT 터널 안내 구간) */
     val inTunnel: Boolean = false,
@@ -92,7 +93,9 @@ class NearbyClient(
             null -> checklist?.let { say(*it.update(s.hazardOn, s.trunkOpen, s.doorOpen).toTypedArray()) }
         }
 
-        if (thanks.feed(s.at, s.hazardOn, s.turnSignalOn, s.speedKmh)) send(Thanks(id, s.pos, ThanksVia.HAZARD_BLINK))
+        if (thanks.feed(s.at, s.hazardOn, s.turnSignalOn, s.speedKmh, brake.lastEventAtOrNull, s.parked)) {
+            send(Thanks(id, s.pos, ThanksVia.HAZARD_BLINK))
+        }
 
         if (s.parked && prev?.parked != true && memos.isNotEmpty()) {
             showReportGuide = true

@@ -72,41 +72,92 @@ class StopDetector(
 }
 
 /**
- * 비상등 감사 인사 감지.
- * 한국 운전자는 끼어든 뒤 비상등 버튼을 눌러 2~3번 깜빡이고 끈다. 이 짧은 켜짐(0.8~4초)을
- * 달리는 중(시속 20km 이상), 깜빡이를 켠 지 20초 안에 했을 때만 "고마워"로 읽는다.
- * 4초 넘게 켜 두거나 서 있는 중이면 진짜 비상 상황이라 감사로 읽지 않는다.
+ * 비상등 감사 인사 감지. 원칙: 감사를 놓치는 것은 괜찮지만, 진짜 비상을 감사로 잘못 읽지 않는다.
+ * 한국 운전자는 끼어든 뒤 비상등 버튼을 눌러 2~3번 깜빡이고 끈다. 이 짧은 켜짐만 "고마워"로 읽는다.
+ *
+ * | 조건 | 달리는 중 (시속 20km 이상) | 정체·정차 (켠 동안 한 번이라도 20km 미만) |
+ * | 끼어듦 | 깜빡이를 켰다 끈 뒤 20초 안에 비상등을 켬 | 같음 |
+ * | 켠 시간 | 0.8~4초 | 0.8~3초 |
+ * | 급제동 | 켜기 전 30초 안·켠 동안 없음 | 같음 |
+ * | 기어 | P 아님 | 같음 |
+ * | 다시 켬 | 끈 뒤 10초 안에 다시 켜면 그 켜짐은 비상 | 끈 뒤 10초를 지켜보고, 그사이 다시 켜면 취소 |
+ *
+ * 달리는 중에는 끄는 순간 바로 판정한다(뒤차가 금방 멀어지므로). 정체 중에는 앞이 막혀 멈춘 뒤 비상등을
+ * 켜는 일이 흔해서, 끄고 10초 동안 다시 켜지 않는 걸 확인한 뒤에야 감사로 보낸다.
  */
 class HazardThanksDetector(
     private val minOnMs: Long = 800,
     private val maxOnMs: Long = 4_000,
+    private val maxOnSlowMs: Long = 3_000,
     private val afterSignalMs: Long = 20_000,
     private val minSpeedKmh: Int = 20,
+    private val noBrakeBeforeMs: Long = 30_000,
+    private val relightMs: Long = 10_000,
     private val cooldownMs: Long = 10_000,
 ) {
     private var onSince: Long? = null
     private var lastTurnSignalAt: Long? = null
     private var lastThanksAt = Long.MIN_VALUE / 2
-    private var stillDuringOn = false
+    private var lastOffAt: Long? = null
+    private var slowDuringOn = false
+    private var parkedDuringOn = false
+    /** 이번 켜짐이 직전에 끈 지 10초 안에 다시 켠 것인가 (그러면 비상) */
+    private var relit = false
+    /** 정체 중 감사 후보: 끈 시각. 10초 동안 다시 켜지 않으면 감사로 보낸다 */
+    private var pendingSince: Long? = null
 
-    /** 감사 인사로 읽혔으면 true (비상등을 끄는 순간 판정) */
-    fun feed(at: Long, hazardOn: Boolean, turnSignalOn: Boolean, speedKmh: Int): Boolean {
+    /**
+     * 감사 인사로 읽혔으면 true. 달리는 중이면 비상등을 끄는 순간, 정체 중이면 끈 뒤 10초가 지난 순간.
+     * [lastHardBrakeAt]: [HardBrakeDetector]가 마지막으로 급제동을 잡은 시각, [parked]: 기어 P
+     */
+    fun feed(
+        at: Long,
+        hazardOn: Boolean,
+        turnSignalOn: Boolean,
+        speedKmh: Int,
+        lastHardBrakeAt: Long? = null,
+        parked: Boolean = false,
+    ): Boolean {
         if (turnSignalOn) lastTurnSignalAt = at
         val since = onSince
         if (hazardOn) {
-            if (since == null) { onSince = at; stillDuringOn = false }
-            if (speedKmh < minSpeedKmh) stillDuringOn = true
+            if (since == null) {
+                onSince = at
+                // 끈 뒤 곧 다시 켰다 → 감사 후보도 취소하고 이번 켜짐도 비상으로 본다
+                relit = lastOffAt?.let { at - it < relightMs } ?: false
+                pendingSince = null
+                slowDuringOn = false
+                parkedDuringOn = false
+            }
+            if (speedKmh < minSpeedKmh) slowDuringOn = true
+            if (parked) parkedDuringOn = true
             return false
         }
-        if (since == null) return false
+        if (since == null) {
+            val pending = pendingSince ?: return false
+            // 지켜보는 동안 급제동하거나 P로 바꾸면 감사가 아니다
+            if (parked || (lastHardBrakeAt != null && lastHardBrakeAt >= pending)) { pendingSince = null; return false }
+            if (at - pending < relightMs) return false
+            pendingSince = null
+            lastThanksAt = at
+            return true
+        }
         onSince = null
+        lastOffAt = at
         val onFor = at - since
         val signal = lastTurnSignalAt ?: return false
-        val ok = onFor in minOnMs..maxOnMs &&
-            !stillDuringOn &&
+        val braked = lastHardBrakeAt != null && lastHardBrakeAt >= since - noBrakeBeforeMs
+        val ok = onFor >= minOnMs &&
+            onFor <= (if (slowDuringOn) maxOnSlowMs else maxOnMs) &&
+            !relit && !braked && !parkedDuringOn && !parked &&
             since - signal in 0..afterSignalMs &&
             at - lastThanksAt >= cooldownMs
-        if (ok) lastThanksAt = at
-        return ok
+        if (!ok) return false
+        if (slowDuringOn) {
+            pendingSince = at
+            return false
+        }
+        lastThanksAt = at
+        return true
     }
 }

@@ -58,11 +58,83 @@ class DetectorsTest {
 
         val still = HazardThanksDetector()
         still.feed(0, false, true, 0); still.feed(1_000, true, false, 0)
-        assertFalse(still.feed(2_500, false, false, 0))
+        assertFalse("서 있을 때는 끄는 순간 바로 감사로 보내지 않는다", still.feed(2_500, false, false, 0))
 
         val noSignal = HazardThanksDetector()
         noSignal.feed(0, true, false, 70)
         assertFalse(noSignal.feed(1_500, false, false, 70))
+    }
+
+    /** 정체 구간: 깜빡이로 끼어들고 멈춘 뒤 비상등을 [onMs] 켰다 끈다. 끈 뒤 [after]까지 0.5초씩 넣고 감사로 읽힌 횟수 */
+    private fun jam(
+        onMs: Long = 1_500,
+        brakeAt: Long? = null,
+        parked: Boolean = false,
+        relightAfterOff: Long? = null,
+        after: Long = 12_000,
+    ): Int {
+        val h = HazardThanksDetector()
+        var thanks = 0
+        h.feed(0, false, true, 8)
+        h.feed(2_000, false, false, 3)
+        val on = 4_000L
+        var t = on
+        while (t < on + onMs) { if (h.feed(t, true, false, 0, brakeAt, parked)) thanks++; t += 500 }
+        val off = on + onMs
+        t = off
+        while (t <= off + after) {
+            val relit = relightAfterOff != null && t - off in relightAfterOff until relightAfterOff + 2_000
+            if (h.feed(t, relit, false, 0, brakeAt, parked)) thanks++
+            t += 500
+        }
+        return thanks
+    }
+
+    @Test
+    fun `정체 중 끼어든 뒤 멈춰서 비상등 1점5초는 끄고 10초 지켜본 뒤 감사`() {
+        val h = HazardThanksDetector()
+        h.feed(0, false, true, 8)
+        h.feed(2_000, false, false, 0)
+        h.feed(4_000, true, false, 0)
+        assertFalse(h.feed(5_500, false, false, 0))
+        assertFalse("끈 뒤 10초가 안 됐다", h.feed(15_000, false, false, 0))
+        assertTrue(h.feed(15_500, false, false, 0))
+        assertEquals(1, jam())
+    }
+
+    @Test
+    fun `급제동 직후 켠 비상등은 감사가 아니다 (달리는 중에도)`() {
+        assertEquals(0, jam(brakeAt = -10_000))
+        val fast = HazardThanksDetector()
+        fast.feed(0, false, true, 70)
+        fast.feed(3_000, true, false, 70, lastHardBrakeAt = 1_000)
+        assertFalse(fast.feed(4_500, false, false, 70, lastHardBrakeAt = 1_000))
+        assertEquals("30초가 지난 급제동은 상관없다", 1, jam(brakeAt = -40_000))
+    }
+
+    @Test
+    fun `정체 중에는 3초 넘게 켜면 비상, 달리는 중에도 4초 넘으면 비상`() {
+        assertEquals(1, jam(onMs = 3_000))
+        assertEquals(0, jam(onMs = 3_500))
+        val fast = HazardThanksDetector()
+        fast.feed(0, false, true, 70); fast.feed(1_000, true, false, 70)
+        assertFalse(fast.feed(5_500, false, false, 70))
+    }
+
+    @Test
+    fun `끈 뒤 10초 안에 다시 켜면 감사를 취소하고 비상으로 본다`() {
+        assertEquals(0, jam(relightAfterOff = 5_000, after = 30_000))
+        val relit = HazardThanksDetector()
+        relit.feed(0, false, true, 70)
+        relit.feed(2_000, true, false, 70)
+        assertTrue("달리는 중에는 끄는 순간 판정", relit.feed(3_500, false, false, 70))
+        relit.feed(6_000, true, false, 70)
+        assertFalse("끈 지 2.5초 만에 다시 켰다", relit.feed(7_500, false, false, 70))
+    }
+
+    @Test
+    fun `기어 P에서 켠 비상등은 감사가 아니다`() {
+        assertEquals(0, jam(parked = true))
     }
 
     @Test
