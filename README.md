@@ -13,7 +13,7 @@
 
 <img src="docs/mockups/hero.jpg" width="100%" alt="터널 2km 뒤 차의 중앙 디스플레이에 앞길 램프와 터널 안 위험 운전 제보가 떠 있는 모습">
 
-[움직이는 장면](#움직이는-장면) · [**시연 영상 (83초)**](docs/demo.mp4) · [APK 받기](apk/봇듀_니어바이_release.apk) · [개발일지](docs/개발일지.md) · [시스템 구조](#시스템-구조) · [시연 방법](#실행)
+[움직이는 장면](#움직이는-장면) · [**시연 영상 (91초)**](docs/demo.mp4) · [APK 받기](apk/봇듀_니어바이_release.apk) · [개발일지](docs/개발일지.md) · [시스템 구조](#시스템-구조) · [시연 방법](#실행)
 
 </div>
 
@@ -291,7 +291,7 @@ adb shell am start -S -n com.botdue.nearby/.MainActivity --ei scenario 1 --es ca
 | --- | --- |
 | 판정 엔진(core) | 완료, 테스트 42개 (규칙별 + 차 한 대 흐름 + 시나리오 처음부터 끝까지) |
 | 중계 서버 | 완료, WebSocket 두 연결 간 배달 테스트 1개. 에뮬레이터 앱 ↔ PC 서버 ↔ 다른 차(스크립트) 합류 예고 오가는 것 확인 |
-| 시연 영상 | v9(83초, v0.3.0 화면). 뒤차 500m 재안내·지나간 뒤 확인·신고 번호 장면 포함 (`docs/demo.mp4`) |
+| 시연 영상 | v10(91초, v0.3.0 화면). 뒤차 500m 재안내·지나간 뒤 확인·신고 번호 장면, Pleos Connect Emulator v2.1.0 실제 실행 장면 포함 (`docs/demo.mp4`) |
 | 디자인 | v0.3.0: 주행 중 표 숨김·큰 거리 숫자, 자막 거리 맞춤, 램프 눈금 5줄 간격. 그 밖은 v0.2.0. 현대차 "Pixel by Pixel" 캠페인에서 출발한 앞길 램프, 밝은 도로 바탕과 표지판처럼 읽히는 알림으로 다른 세 앱과 화면 문법을 나눔 ([디자인](#디자인)) |
 | 차량 앱 화면 | 완료 (주행·행동요령·신고 도우미·질문·신고 번호·지도). Pleos Connect Emulator v2.1.0에서 release APK 실행 확인([Pleos 실제 화면](#pleos-connect-에뮬레이터에서-실제로-실행한-화면)). SDK 콜백 실연결은 아직 |
 | Pleos SDK 연결 | 예정. `VehicleSample`을 Vehicle SDK(속도·Brake·TurnSignal·Light·Door·기어), NaviHelper(경로·합류 지점·터널), FusedLocation 콜백으로 채운다 |
