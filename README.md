@@ -21,6 +21,17 @@
 > 2026 현대자동차그룹 차량용 앱 개발 공모전 "Code your App into Pleos App Market" 출품작, 팀 봇듀.
 > 차량 신호는 아직 시연용 시나리오(차 4대가 같은 도로를 달리는 상황)로 재생한다. Pleos SDK 연결은 [현재 상태](#현재-상태)에 적었다.
 
+## Pleos Connect 에뮬레이터에서 실제로 실행한 화면
+
+**Pleos Connect Emulator v2.1.0**(2560×1440, 160dpi)에 release APK를 설치해 실행한 전체 화면이다. 왼쪽은 Pleos 차량 상태, 가운데가 니어바이(세로 1칸), 오른쪽은 Pleos 지도. 가로 2칸은 지도 자리까지 펼친 화면이다. 차량 신호는 아직 시연용 데이터로 재생한다.
+
+<table>
+<tr><td width="50%"><img src="docs/pleos/1_merge.jpg" alt="Pleos Connect 에뮬레이터: 합류 예고"></td><td width="50%"><img src="docs/pleos/4_hazard.jpg" alt="Pleos Connect 에뮬레이터: 터널 안 앞길 주의보"></td></tr>
+<tr><td><b>합류 예고</b></td><td><b>터널 안 앞길 주의보</b></td></tr>
+<tr><td width="50%"><img src="docs/pleos/5_checklist.jpg" alt="Pleos Connect 에뮬레이터: 멈춘 차 행동요령 확인"></td><td width="50%"><img src="docs/pleos/11_stillthere.jpg" alt="Pleos Connect 에뮬레이터: 지나간 뒤 확인"></td></tr>
+<tr><td><b>멈춘 차 행동요령 확인</b></td><td><b>지나간 뒤 확인</b></td></tr>
+</table>
+
 ## 한눈에 보기
 
 | | |
@@ -257,9 +268,13 @@ adb shell am start -S -n com.botdue.nearby/.MainActivity --ei scenario 1 --es ca
 
 | 항목 | 내용 |
 | --- | --- |
-| 지금 확인한 곳 | Android Emulator (API 35). `adb shell wm size 920x1414`, `adb shell wm density 240`으로 Pleos 앱 창 세로 1칸(920×1330)과 시스템 바를 맞췄다 |
-| 목표 환경 | Pleos Connect Emulator v2.1.0 (AAOS) |
-| Pleos 이미지 | 아직 실제로 붙여 보지 않았다. 2차 PT 전에 연결해 확인할 예정 |
+| 테스트 기기 | **Pleos Connect Emulator v2.1.0** (Android 14 · API 34 Automotive, 시스템 이미지 "Pleos Connect v2.1.0 APIs" arm64, 빌드 `RELEASE.release_connect_v2.1.0`), Android Emulator 35.2.10, macOS (Apple Silicon) |
+| 화면 규격 | AVD 프로필 Pleos Connect v2.1.0: **2560×1440, 160dpi(mdpi), 12.8인치**, RAM 4GB, Cold boot |
+| 앱 창 | 세로 1칸 **841×1210dp** (Pleos 화면에서 x 853~1694, y 90~1300), 가로 2칸 **1706×1210dp**. 앱은 설계 기준 창(세로 613×887dp, 가로 1247×887dp)을 실제 창 크기에 맞춰 통째로 비례 확대한다 (`ui/Theme.kt`의 `FitWindow`) |
+| 실행 확인 | release APK를 설치해 위 화면처럼 세로 1칸·가로 2칸에서 실행했다 ([Pleos 실제 화면](#pleos-connect-에뮬레이터에서-실제로-실행한-화면)) |
+| 화면 이미지(docs/screens) | 개발 중에는 Android Emulator(API 35)를 `wm size 920x1414`·`wm density 240`으로 앱 창 크기(920×1330px)만 맞춰 찍었다 |
+| 아직 안 한 것 | Vehicle·NaviHelper SDK 콜백 실연결 (지금 차량 신호는 시연용 데이터로 재생). 2차 PT 전에 Virtual Console(`adb forward tcp:8088 tcp:8088`)로 신호를 넣어 확인할 예정 |
+| 빌드 | Android Studio, Kotlin(Jetpack Compose), minSdk 28, Gradle 8.13 |
 | 중계 서버 | 내 PC에서 `NEARBY_DEMO=1 ./gradlew :server:run` (포트 8080, `PORT`로 바꿀 수 있다). 에뮬레이터는 `ws://10.0.2.2:8080/nearby`로 붙는다 |
 | 판정 엔진 | `./gradlew :core:test :server:test` (JVM만 있으면 된다, 에뮬레이터 불필요) |
 
@@ -278,7 +293,7 @@ adb shell am start -S -n com.botdue.nearby/.MainActivity --ei scenario 1 --es ca
 | 중계 서버 | 완료, WebSocket 두 연결 간 배달 테스트 1개. 에뮬레이터 앱 ↔ PC 서버 ↔ 다른 차(스크립트) 합류 예고 오가는 것 확인 |
 | 시연 영상 | v9(83초, v0.3.0 화면). 뒤차 500m 재안내·지나간 뒤 확인·신고 번호 장면 포함 (`docs/demo.mp4`) |
 | 디자인 | v0.3.0: 주행 중 표 숨김·큰 거리 숫자, 자막 거리 맞춤, 램프 눈금 5줄 간격. 그 밖은 v0.2.0. 현대차 "Pixel by Pixel" 캠페인에서 출발한 앞길 램프, 밝은 도로 바탕과 표지판처럼 읽히는 알림으로 다른 세 앱과 화면 문법을 나눔 ([디자인](#디자인)) |
-| 차량 앱 화면 | 완료 (주행·행동요령·신고 도우미·질문·신고 번호·지도). 안드로이드 에뮬레이터를 Pleos 창 크기로 맞춰 확인, Pleos 이미지에서는 아직([테스트 환경](#테스트-환경)) |
+| 차량 앱 화면 | 완료 (주행·행동요령·신고 도우미·질문·신고 번호·지도). Pleos Connect Emulator v2.1.0에서 release APK 실행 확인([Pleos 실제 화면](#pleos-connect-에뮬레이터에서-실제로-실행한-화면)). SDK 콜백 실연결은 아직 |
 | Pleos SDK 연결 | 예정. `VehicleSample`을 Vehicle SDK(속도·Brake·TurnSignal·Light·Door·기어), NaviHelper(경로·합류 지점·터널), FusedLocation 콜백으로 채운다 |
 | 음성 | 예정. 낱말 규칙(`KeywordIntentReader`)은 그대로 두고, 입력만 SpeechToText(ON_DEVICE)로 받는다. 읽기는 TTS |
 | 확인할 것 | NaviHelper로 다음 합류 지점 받기, 비상등·기어 상태 읽기, 급제동 기준값 |

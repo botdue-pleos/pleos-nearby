@@ -52,6 +52,7 @@ import com.botdue.nearby.ui.tx
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
+import com.botdue.nearby.ui.FitWindow
 
 class MainActivity : ComponentActivity() {
     private var start by mutableStateOf(StartAt())
@@ -60,7 +61,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         start = startOf(intent)
         // 새 시작 값이 오면 시연 한 판을 처음부터 다시 만든다
-        setContent { key(start) { NearbyApp(start) } }
+        setContent { FitWindow { key(start) { NearbyApp(start) } } }
     }
 
     /** 이미 떠 있을 때 am start를 다시 부르면 여기로 온다. 캡처 옵션(clean 등)을 새로 적용한다 */
